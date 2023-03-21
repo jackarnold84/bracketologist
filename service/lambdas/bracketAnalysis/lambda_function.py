@@ -1,3 +1,5 @@
+import json
+import auth
 from utils import response
 from db import GroupDB, BracketDB
 from sim import (
@@ -11,10 +13,25 @@ bracket_db = BracketDB()
 
 def lambda_handler(event, context):
 
-    # read query
+    # read payload
     params = event['queryStringParameters']
     group_id = params['groupID'] if 'groupID' in params else ''
     limit = params['limit'] if 'limit' in params else None
+    body = json.loads(event['body']) if 'body' in event else {}
+    auth_body = body['auth'] if 'auth' in body else {}
+
+    # auth
+    authorized = auth.is_authorized(auth_body)
+    if 'auth' in params and params['auth'] == 'checkAuth':
+        return response({'authorized': authorized})
+    elif 'auth' in params and params['auth'] == 'requestAuth':
+        token = auth.request_authorization(auth_body)
+        if token:
+            return response({'authorized': True, 'authToken': token})
+        else:
+            return response({'authorized': False})
+    elif not authorized:
+        return response({'authorized': False}, status=401)
 
     if not group_id:
         return response({'error': 'invalid query parameters'}, status=400)
