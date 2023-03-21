@@ -1,5 +1,6 @@
 import json
 
+
 def response(body={}, status=200, cors=True):
 
     headers = {
@@ -117,5 +118,3 @@ matchup_max_seeds = {
     49: 1, 50: 2, 51: 1, 52: 2, 53: 1, 54: 2, 55: 1, 56: 2,
     57: 1, 58: 1, 59: 1, 60: 1, 61: 1, 62: 1, 63: 1
 }
-
-

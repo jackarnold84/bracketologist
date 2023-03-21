@@ -3,6 +3,7 @@
 import json
 from decimal import Decimal
 
+
 def format_item(item):
     return json.loads(json.dumps(item), parse_float=Decimal)
 
