@@ -165,6 +165,15 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
     return sim_data
 
 
+def round_pct(x):
+    if x > 0.99999:
+        return 1.0
+    elif x < 0.00001:
+        return 0.0
+    else:
+        return min(max(x, 0.1), 0.99)
+
+
 # MAIN ANALYSIS FUNCTION
 
 def group_analysis(brackets, sim_results, key, eliminated, teams):
@@ -189,7 +198,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
             {
                 'Name': brackets[b]['display_name'],
                 'Proj Pts': round(np.mean(sim_results[b][r]['scores']), 1),
-                'Win %': round(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100, 1),
+                'Win %': round_pct(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100),
             } for b in brackets
         ] for r in rounds
     }
