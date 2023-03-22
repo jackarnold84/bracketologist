@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Bracketologist</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="static/images/icon.png">
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="static/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="static/utils.js"></script>
+  <script src="config.js"></script>
+</head>
+
+
+<body>
+
+  <!-- HEADER -->
+  <a href="index.html" class="plain">
+    <div class="w3-container w3-padding x3-blue-bg center">
+      <h2 class="white-text">Bracketologist</h2>
+    </div>
+  </a>
+
+  <!-- CONTENT -->
+  <div class="x3-row auto" style="max-width: 800px;">
+
+    <h2 class="center">Groups</h2>
+
+    <!-- select a group -->
+    <div id="group-nav-holder" class="x3-row auto text" style="max-width: 500px">
+      <div class="x3-row center semibold" style="border-bottom: 1px solid lightgrey;">
+        Select a group:
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- FOOTER -->
+  <footer class="center x3-row x3-blue-bg" style="margin-top: 64px;">
+    <span class="white-text w3-smalls">Created By Jack Arnold</span>
+    <span class="white-text x3-l4 x3-r4">|</span>
+    <a href="https://github.com/jackarnold84/bracketologist" class="plain">
+      <i class="bi-github white-text"></i>
+      <span class="white-text x3-link-plain">Github</span>
+    </a>
+  </footer>
+
+
+</body>
+
+
+
+<!-- SCRIPTS -->
+<script>
+
+  const GroupNavComponent = (name, tag) => (`
+    <a href="group.html?tag=${tag}" class="x3-link-plain">
+      <div class="nav-table-row">
+        <i class="bi-people-fill x3-r8"></i>
+        <span>${name}</span>
+      </div>
+    </a>
+  `);
+
+  // add groups
+  Object.values(groupMeta).forEach(g => {
+    $('#group-nav-holder').append(
+      GroupNavComponent(g.name, g.tag)
+    )
+  });
+
+</script>
+
+
+</html>
