@@ -48,3 +48,21 @@ const formatDate = (date, type) => {
         return date.toLocaleString('en-US');
     }
 };
+
+const getTimeAgo = (timestamp) => {
+    const diff = getEpochTime() - timestamp;
+    if (diff < 0) {
+        return '--';
+    } else if (diff < 3600) {
+        const min = ((diff + 30) / 60).toFixed();
+        return `${min} min ago`;
+    } else if (diff < 86400) {
+        const hr = ((diff - 1800) / 3600).toFixed();
+        const sfx = hr > 1 ? 's' : '';
+        return `${hr} hr${sfx} ago`;
+    } else {
+        const day = ((diff - 43200) / 86400).toFixed();
+        const sfx = day > 1 ? 's' : '';
+        return `${day} day${sfx} ago`;
+    }
+}

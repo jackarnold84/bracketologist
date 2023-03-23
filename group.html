@@ -29,7 +29,7 @@
   <!-- CONTENT -->
   <div class="x3-row auto" style="max-width: 800px;">
 
-    <h3 id="group-title" class="center x3-t16 x3-b16"></h3>
+    <h3 id="group-title" class="center x3-t16 x3-b8"></h3>
 
     <div class="center">
       <div id="loader-holder" class="loader"></div>
@@ -37,6 +37,9 @@
     </div>
 
     <div id="analysis-content" class="off">
+
+      <!-- time ago -->
+      <div id="time-ago" class="w3-small center x3-b24"></div>
 
       <!-- leaderboard -->
       <div class="x3-row auto x3-b48" style="max-width: 500px;">
@@ -244,12 +247,11 @@
   fetchAnalysisAPI(groupID)
     .then(result => {
       if (!result || result.error) {
-        console.log(result);
+        console.warn(result);
         $('#loader-holder').fadeOut(200).removeClass('loader');
         $('#error-text').text('This group is not available right now');
         return;
       }
-      console.log(result.group.analysis);
       fillTables(result.group.analysis);
       $('#loader-holder').fadeOut(200).removeClass('loader');
       $('#analysis-content').fadeIn(300);
@@ -258,6 +260,9 @@
 
   // render
   const fillTables = (analysis) => {
+
+    // time ago
+    $('#time-ago').text(`Updated ${getTimeAgo(analysis.timestamp)}`);
 
     // leaderboard
     analysis.current_scores.forEach((x, i) => {
