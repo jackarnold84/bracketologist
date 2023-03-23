@@ -70,8 +70,19 @@
   Object.values(groupMeta).forEach(g => {
     $('#group-nav-holder').append(
       GroupNavComponent(g.name, g.tag)
-    )
+    );
   });
+
+  // admin page
+  $('#group-nav-holder').append(`
+    <a href="admin.html" class="x3-link-plain">
+      <div class="nav-table-row">
+        <i class="bi-gear-fill x3-r8"></i>
+        <span>Admin</span>
+      </div>
+    </a>
+  `);
+
 
 </script>
 
