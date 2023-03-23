@@ -47,6 +47,7 @@
             <th>Bracket</th>
             <th>Pts</th>
             <th>Max</th>
+            <th></th>
           </tr>
         </table>
         <div id="leaderboard-toggle" class="center x3-t8 toggle-link">
@@ -75,7 +76,8 @@
           <tr class="th-border">
             <th></th>
             <th>Bracket</th>
-            <th>Avg Pts</th>
+            <th>Proj</th>
+            <th>Max</th>
             <th>Win</th>
           </tr>
         </table>
@@ -159,22 +161,34 @@
 
 <!-- COMPONENTS -->
 <script>
-  const LeaderboardRowComponent = (i, name, pts, max) => (`
-    <tr>
-      <td>${i}</td>
-      <td>${name}</td>
-      <td>${pts}</td>
-      <td>${max}</td>
-    </tr>
-  `);
+  const TeamAbbrevDisplayComponent = (team, teamInfo) => {
+    const eliminated = teamInfo[team].eliminated;
+    const cls = eliminated ? 'strikethrough' : '';
+    return (`<span class="${cls}">${team}</span>`);
+  }
 
-  const ProjectionRowComponent = (i, name, exp, win, round) => {
+  const LeaderboardRowComponent = (i, name, pts, max, ff, teamInfo) => {
+    return (`
+      <tr>
+        <td>${i}</td>
+        <td>${name}</td>
+        <td>${pts}</td>
+        <td>${max}</td>
+        <td>
+          ${TeamAbbrevDisplayComponent(ff[0], teamInfo)}
+        </td>
+      </tr>
+    `);
+    };
+
+  const ProjectionRowComponent = (i, name, exp, max, win, round) => {
     const opacity = (win / 100).toFixed(2);
     return (`
       <tr class="proj-tr proj-tr-${round}">
         <td>${i}</td>
         <td>${name}</td>
         <td>${exp}</td>
+        <td>${max}</td>
         <td style="background-color:rgb(83, 185, 255, ${opacity})">${win.toFixed(1)}%</td>
       </tr>
     `);
@@ -184,7 +198,7 @@
     <tr>
       <td>${i}</td>
       <td>${name}</td>
-      <td>${avg}</td>
+      <td>${avg.toFixed(1)}</td>
       <td>${best}</td>
       <td>${worst}</td>
     </tr>
@@ -199,13 +213,14 @@
     </tr>
   `);
 
-  const TeamPopularityRowComponent = (i, team, wins) => (`
+  const TeamPopularityRowComponent = (i, team, seed, wins) => (`
     <tr>
       <td>${i}</td>
-      <td>${team}</td>
-      <td>${wins}</td>
+      <td>${team} <span class="w3-small x3-l4">${seed}</span></td>
+      <td>${wins.toFixed(1)}</td>
     </tr>
   `);
+
 </script>
 
 
@@ -247,7 +262,7 @@
     // leaderboard
     analysis.current_scores.forEach((x, i) => {
       $('#leaderboard-table').append(
-        LeaderboardRowComponent(i + 1, x.name, x.pts, x.max)
+        LeaderboardRowComponent(i + 1, x.name, x.pts, x.max, x.ff, analysis.team_info)
       );
     });
     initToggle($('#leaderboard-toggle'), $('#leaderboard-table').children(), 10);
@@ -257,7 +272,7 @@
     rounds.forEach(round => {
       analysis.projection_board[round].forEach((x, i) => {
         $(`#projection-table`).append(
-          ProjectionRowComponent(i + 1, x.name, x.pts, x.win, round)
+          ProjectionRowComponent(i + 1, x.name, x.pts, x.max, x.win, round)
         );
       });
     });
@@ -288,7 +303,7 @@
     // team popularity
     analysis.team_popularity.slice(0, 32).forEach((x, i) => {
       $('#team-popularity-table').append(
-        TeamPopularityRowComponent(i + 1, x.team, x.avg)
+        TeamPopularityRowComponent(i + 1, x.team, x.seed, x.avg)
       );
     });
     initToggle($('#team-popularity-toggle'), $('#team-popularity-table').children(), 16);

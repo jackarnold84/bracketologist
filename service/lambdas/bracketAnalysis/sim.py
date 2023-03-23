@@ -165,13 +165,23 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
     return sim_data
 
 
-def round_pct(x):
+# analysis helpers
+def pct_limit(x):
     if x > 99.999:
-        return 100.0
+        return 100
     elif x < 0.001:
-        return 0.0
+        return 0
     else:
         return min(max(x, 0.1), 99.9)
+    
+def get_final_four(bracket):
+    ff = [bracket['champion']]
+    for m in [63, 62, 61]:
+        if bracket['selections'][m]['team1'] not in ff:
+            ff.append(bracket['selections'][m]['team1'])
+        elif bracket['selections'][m]['team2'] not in ff:
+            ff.append(bracket['selections'][m]['team2'])
+    return ff
 
 
 # MAIN ANALYSIS FUNCTION
@@ -184,6 +194,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
             'name': brackets[b]['display_name'],
             'pts': get_bracket_score(brackets[b], key, eliminated)[0],
             'max': get_bracket_score(brackets[b], key, eliminated)[1],
+            'ff': get_final_four(brackets[b]),
         } for b in brackets
     ]
     current_scores = sorted(
@@ -198,7 +209,8 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
             {
                 'name': brackets[b]['display_name'],
                 'pts': round(np.mean(sim_results[b][r]['scores'])),
-                'win': round_pct(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100),
+                'max': get_bracket_score(brackets[b], key, eliminated, r)[1],
+                'win': pct_limit(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100),
             } for b in brackets
         ] for r in rounds
     }
@@ -213,7 +225,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     rankings = [
         {
             'name': brackets[b]['display_name'],
-            'avg': round(np.mean(sim_results[b]['NCG']['ranks']), 1),
+            'avg': round(np.mean(sim_results[b]['NCG']['ranks']), 3),
             'worst': max(sim_results[b]['NCG']['ranks']),
             'best': min(sim_results[b]['NCG']['ranks']),
         } for b in brackets
@@ -257,19 +269,20 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     # most popular teams
     team_popularity = [
         {
-            'team': team_info[t]['display_seed'],
+            'team': team_info[t]['display_name'],
+            'seed': team_info[t]['seed'],
             'avg': round(
                 np.mean(
                     [sum([m['selected'] == t for m in b['selections'].values()])
                      for b in brackets.values()]
                 ),
-                1
+                3
             ),
         } for t in teams
     ]
     team_popularity = sorted(
         team_popularity,
-        key=lambda x: x['avg'],
+        key=lambda x: (x['avg'], -x['seed']),
         reverse=True
     )
 

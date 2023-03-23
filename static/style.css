@@ -93,6 +93,10 @@ i:hover {
   color: #AD2A1A;
 }
 
+.strikethrough {
+  text-decoration: line-through;
+}
+
 
 
 .x3-blue-bg {
