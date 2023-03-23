@@ -74,12 +74,12 @@ def fetch_bracket(id, year='2023'):
         matchup = i + 1
         loc1 = 1 if matchup >= 33 else 0
         loc2 = 3 if matchup >= 33 else 1
-        to_advance_text = m.select('.selectedToAdvance')[0].text
+        advanced = m.select('.selectedToAdvance')[0].select('.abbrev')[0].text
 
         abbrev1 = m.select('.abbrev')[loc1].text
-        selected1 = abbrev1 in to_advance_text
+        selected1 = abbrev1 == advanced
         abbrev2 = m.select('.abbrev')[loc2].text
-        selected2 = abbrev2 in to_advance_text
+        selected2 = abbrev2 == advanced
 
         selections[i+1] = {
             'team1': abbrev1,
