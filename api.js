@@ -19,7 +19,7 @@ const fetchAnalysisAPI = async (groupID) => {
 
 const bracketAnalysisAPI = async (token, groupID, limit) => {
     const apiUrl = 'https://71c9c860jj.execute-api.us-east-2.amazonaws.com/default/bracketAnalysis';
-    const limit = limit || '';
+    limit = limit || '';
 
     return fetch(apiUrl + '?' + new URLSearchParams(
         {
