@@ -230,7 +230,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     for r in projection_board:
         projection_board[r] = sorted(
             projection_board[r],
-            key=lambda x: x['win'],
+            key=lambda x: (x['win'], x['pts'], x['max']),
             reverse=True
         )
 
