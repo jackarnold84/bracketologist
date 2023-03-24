@@ -19,4 +19,9 @@ const groupMeta = {
         'groupID': '5192759',
         'year': 2023,
     },
+    'dev': {
+        'name': 'Dev Group',
+        'tag': 'dev',
+        'groupID': '000'
+    },
 };

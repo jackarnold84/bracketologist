@@ -497,3 +497,30 @@ x3-radio-label {
     transform: rotate(360deg);
   }
 }
+
+.loader-bar {
+  display: block;
+  position: relative;
+  height: 16px;
+  width: 100%;
+  border: 1px solid #606060;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.loader-bar:after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 0;
+  background: #0072BC;
+  animation: 30s prog ease-in infinite;
+}
+
+@keyframes prog {
+  to {
+    width: 100%;
+  }
+}

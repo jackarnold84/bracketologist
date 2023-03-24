@@ -1,10 +1,11 @@
 import json
 import auth
-from utils import response
+from utils import response, parseInt
 from db import GroupDB, BracketDB
+import config
 from sim import (
     fetch_bracket_key, get_eliminated_teams, group_simulation,
-    group_analysis, apply_alt_display_names,
+    group_analysis, apply_alt_display_names
 )
 
 group_db = GroupDB()
@@ -16,7 +17,7 @@ def lambda_handler(event, context):
     # read payload
     params = event['queryStringParameters']
     group_id = params['groupID'] if 'groupID' in params else ''
-    limit = params['limit'] if 'limit' in params else None
+    limit = parseInt(params['limit']) if 'limit' in params else None
     body = json.loads(event['body']) if 'body' in event else {}
     auth_body = body['auth'] if 'auth' in body else {}
 
@@ -40,6 +41,8 @@ def lambda_handler(event, context):
     group = group_db.read_group(group_id)
     if not group:
         return response({'error': 'group %s not found' % group_id}, status=400)
+    year = str(group['year'])
+    active = group['type'] == 'mens' and year == config.CURRENT_YEAR
 
     # read brackets
     brackets = {}
@@ -52,7 +55,7 @@ def lambda_handler(event, context):
 
     # fetch bracket key
     try:
-        key, teams = fetch_bracket_key()
+        key, teams = fetch_bracket_key(year=year, active=active, limit=limit)
         eliminated = get_eliminated_teams(key)
     except Exception as e:
         return response({'error': 'fetching bracket key: %s' % e}, 500)
@@ -84,4 +87,8 @@ def lambda_handler(event, context):
     except Exception as e:
         return response({'error': 'failed group_db write: %s' % e}, 500)
 
-    return response({'success': True})
+    return response({
+        'success': True,
+        'groupID': group_id,
+        'groupMeta': '%s, %s, %s' % (group['group_name'], group['type'], group['year']),
+    })

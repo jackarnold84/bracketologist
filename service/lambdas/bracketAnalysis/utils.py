@@ -16,6 +16,13 @@ def response(body={}, status=200, cors=True):
     }
 
 
+def parseInt(x):
+    try:
+        return int(x)
+    except:
+        return None
+
+
 # bracketology utils
 
 rounds = ['R64', 'R32', 'S16', 'E8', 'F4', 'NCG']

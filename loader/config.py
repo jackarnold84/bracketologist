@@ -3,7 +3,15 @@ groups = {
     'capones-2023': {
         'group_id': '4807922',
         'year': '2023',
-    }
+    },
+    'carlos-boozers': {
+        'group_id': '5987814',
+        'year': '2023',
+    },
+    'c1-chitech': {
+        'group_id': '5192759',
+        'year': '2023',
+    },
 }
 
 

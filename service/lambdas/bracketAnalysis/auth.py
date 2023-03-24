@@ -3,7 +3,7 @@ import time
 import os
 
 # config
-TIMESTAMP_UNIT = 'hour'
+TIMESTAMP_UNIT = 'day'
 TOKEN_DURATION = 3
 MASTER_KEY = int(os.environ['MASTER_KEY'])
 SUB_KEY = int(os.environ['SUB_KEY'])

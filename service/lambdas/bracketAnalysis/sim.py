@@ -7,17 +7,24 @@ from utils import (
     rounds, round_matchups, matchup_sequence,
     matchup_score_value, matchup_max_seeds
 )
+from config import (
+    stat_seeds, matchup_order, CURRENT_YEAR, SAMPLE_ID,
+)
 
 
-def fetch_bracket_key(id='72858746', year='2023'):
+def fetch_bracket_key(id=SAMPLE_ID, year=CURRENT_YEAR, active=False, limit=None):
     url = 'https://fantasy.espn.com/tournament-challenge-bracket/%s/en/entry?entryID=%s' % (
         str(year), str(id)
     )
     req = requests.get(url)
     soup = BeautifulSoup(req.content, 'lxml')
 
+    def get_stat_seed(team):
+        return stat_seeds[team] if active and team in stat_seeds else None
+
     m_classes = ['.m_' + str(i+1) for i in range(63)]
     matchups = [soup.select(mc)[0] for mc in m_classes]
+    include_only = matchup_order[:limit] if active and limit is not None else None
 
     selections = {}
     teams = {}
@@ -34,6 +41,8 @@ def fetch_bracket_key(id='72858746', year='2023'):
         seed2 = m.select('.seed')[loc2].text
         win_select = m.select('.winner')
         winner = win_select[0].select('.abbrev')[0].text if win_select else ''
+        if include_only is not None:
+            winner = winner if matchup in include_only else ''
 
         selections[i+1] = {
             'team1': abbrev1,
@@ -45,11 +54,13 @@ def fetch_bracket_key(id='72858746', year='2023'):
                 'name': name1,
                 'abbrev': abbrev1,
                 'seed': int(seed1),
+                'stat_seed': get_stat_seed(abbrev1),
             }
             teams[abbrev2] = {
                 'name': name2,
                 'abbrev': abbrev2,
                 'seed': int(seed2),
+                'stat_seed': get_stat_seed(abbrev2),
             }
 
     key = selections
@@ -116,8 +127,9 @@ def get_bracket_upsets(bracket, key, teams):
 
 
 def sim_game(t1, t2, teams):
-    diff = teams[t2]['seed'] - teams[t1]['seed']
-    pr = 0.5 + 0.028*(diff)
+    t1_seed = teams[t1]['stat_seed'] or teams[t1]['seed']
+    t2_seed = teams[t2]['stat_seed'] or teams[t2]['seed']
+    pr = 0.5 + 0.028*(t2_seed - t1_seed)
     return t1 if random() < pr else t2
 
 
@@ -173,7 +185,8 @@ def pct_limit(x):
         return 0
     else:
         return min(max(x, 0.1), 99.9)
-    
+
+
 def get_final_four(bracket):
     ff = [bracket['champion']]
     for m in [63, 62, 61]:

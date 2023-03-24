@@ -44,8 +44,13 @@
         </div>
 
         <div class="x3-row">
-          <label class="x3-label">Limit</label>
-          <input class="x3-input" type="number" inputmode="numeric" id="limit-input" autocomplete="off">
+          <div id="add-limit-toggle" class="x3-t8 toggle-link" onclick="handleAddLimit()">
+            <i class="bi-plus-square x3-r4"></i><span>Add Limit</span>
+          </div>
+          <div id="limit-holder" class="off">
+            <label class="x3-label">Limit</label>
+            <input class="x3-input" type="number" inputmode="numeric" id="limit-input" autocomplete="off">
+          </div>
         </div>
 
         <div class="x3-row center x3-t16">
@@ -53,9 +58,9 @@
         </div>
       </form>
 
-      <div class="x3-row center x3-t32">
+      <div class="x3-row center x3-t48">
 
-        <div id="loader-holder"></div>
+        <div id="loader-holder" class="auto" style="max-width: 300px;"></div>
 
         <div id="error-text" class="text error"></div>
         <div id="message-text" class="text"></div>
@@ -144,19 +149,24 @@
     );
   });
 
+  const handleAddLimit = () => {
+    $('#add-limit-toggle').hide();
+    $('#limit-holder').fadeIn(200);
+  }
+
   // update group submit
   const handleSubmit = (e) => {
     e.preventDefault();
     $('#message-text').text('');
     $('#error-text').text('');
-    $('#loader-holder').addClass('loader');
+    $('#loader-holder').addClass('loader-bar');
 
     const groupID = $('#group-select').val();
     const limit = $('#limit-input').val();
 
     bracketAnalysisAPI(authToken, groupID, limit)
       .then(response => {
-        $('#loader-holder').removeClass('loader');
+        $('#loader-holder').removeClass('loader-bar');
         if (response.success) {
           $('#message-text').text(`Group successfully updated (${groupID})`);
         } else {

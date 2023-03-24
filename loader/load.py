@@ -26,7 +26,7 @@ def fetch_group_info(group_id, year='2023'):
     driver = webdriver.Chrome(service=service, options=options)
 
     driver.get(url)
-    time.sleep(5)
+    time.sleep(12)
     soup = BeautifulSoup(driver.page_source, features='lxml')
     driver.quit()
 
@@ -38,6 +38,8 @@ def fetch_group_info(group_id, year='2023'):
         'group_id': group_id,
         'group_name': group_name,
         'url': url,
+        'year': str(year),
+        'type': 'mens',
         'brackets': bracket_ids,
         'analysis': {},
     }
@@ -67,6 +69,9 @@ def fetch_bracket(id, year='2023'):
     username = profile_link.text
 
     m_classes = ['.m_' + str(i+1) for i in range(63)]
+    if not soup.select(m_classes[0]):
+        print('could not load bracket: %s, %s' % (id, bracket_name))
+        return None
     matchups = [soup.select(mc)[0] for mc in m_classes]
 
     selections = {}
@@ -93,6 +98,8 @@ def fetch_bracket(id, year='2023'):
         'bracket_name': bracket_name,
         'display_name': get_display_name(username, bracket_name),
         'url': url,
+        'year': str(year),
+        'type': 'mens',
         'champion': selections[63]['selected'],
         'selections': selections,
     }
@@ -101,8 +108,14 @@ def fetch_bracket(id, year='2023'):
 def fetch_group_brackets(group_info):
     brackets = {}
     for id in tqdm(group_info['brackets']):
-        brackets[id] = fetch_bracket(id)
-        time.sleep(2)
+        b = fetch_bracket(id)
+        if b:
+            brackets[id] = b
+        else:
+            group_info['brackets'].pop(
+                group_info['brackets'].index(id)
+            )
+        time.sleep(8)
     return brackets
 
 
