@@ -176,13 +176,19 @@
 
 <!-- COMPONENTS -->
 <script>
-  const TeamAbbrevDisplayComponent = (team, teamInfo) => {
-    const eliminated = teamInfo[team].eliminated;
-    const cls = eliminated ? 'strikethrough' : '';
-    return (`<span class="${cls}">${team}</span>`);
-  };
 
   const LeaderboardRowComponent = (i, id, name, pts, max, ff, teamInfo) => {
+    const TeamIcon = (team, main=false) => {
+      const img = teamInfo[team].img;
+      const eliminated = teamInfo[team].eliminated;
+      const cls = eliminated ? 'eliminated-img' : '';
+      return img ? (`
+        <img src="${img}" class="${main ? 'team-icon-main' : 'team-icon'} ${cls}">
+      `) : (`
+        <span class="x3-r4 ${cls}">${team}</span>
+      `);
+    }
+
     return (`
       <tr>
         <td>${i}</td>
@@ -190,7 +196,10 @@
         <td>${pts}</td>
         <td>${max}</td>
         <td>
-          ${TeamAbbrevDisplayComponent(ff[0], teamInfo)}
+          ${TeamIcon(ff[0], height='24')}
+          ${TeamIcon(ff[1])}
+          ${TeamIcon(ff[2])}
+          ${TeamIcon(ff[3])}
         </td>
       </tr>
     `);

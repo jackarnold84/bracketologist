@@ -101,6 +101,22 @@ i:hover {
   color: #aeaeae;
 }
 
+.team-icon {
+  height: 16px;
+  margin-right: 4px;
+}
+
+.team-icon-main {
+  height: 24px;
+  margin-right: 8px;
+}
+
+.eliminated-img {
+  color: #aeaeae;
+  filter: grayscale(0.5);
+  opacity: 0.3;
+}
+
 .bracket-table {
   table-layout: fixed;
   width: 100%;
