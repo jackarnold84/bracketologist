@@ -12,6 +12,7 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
   <script src="static/utils.js"></script>
+  <script src="static/modal.js"></script>
   <script src="config.js"></script>
   <script src="api.js"></script>
 </head>
@@ -156,6 +157,16 @@
   </footer>
 
 
+  <!-- MODALS -->
+  <div id="bracket-modal" class="modal">
+    <div class="modal-content">
+      <div id="bracket-modal-content"></div>
+      <div class="x3-row center">
+        <button class="x3-button x3-grey-btn" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 
@@ -169,13 +180,13 @@
     const eliminated = teamInfo[team].eliminated;
     const cls = eliminated ? 'strikethrough' : '';
     return (`<span class="${cls}">${team}</span>`);
-  }
+  };
 
-  const LeaderboardRowComponent = (i, name, pts, max, ff, teamInfo) => {
+  const LeaderboardRowComponent = (i, id, name, pts, max, ff, teamInfo) => {
     return (`
       <tr>
         <td>${i}</td>
-        <td>${name}</td>
+        <td class="bracket-select" name="${id}">${name}</td>
         <td>${pts}</td>
         <td>${max}</td>
         <td>
@@ -185,12 +196,12 @@
     `);
   };
 
-  const ProjectionRowComponent = (i, name, exp, max, win, round) => {
+  const ProjectionRowComponent = (i, id, name, exp, max, win, round) => {
     const opacity = (win / 100).toFixed(2);
     return (`
       <tr class="proj-tr proj-tr-${round}">
         <td>${i}</td>
-        <td>${name}</td>
+        <td class="bracket-select" name="${id}">${name}</td>
         <td>${exp}</td>
         <td>${max}</td>
         <td style="background-color:rgb(83, 185, 255, ${opacity})">
@@ -200,20 +211,20 @@
     `);
   };
 
-  const RankRowComponent = (i, name, avg, best, worst) => (`
+  const RankRowComponent = (i, id, name, avg, best, worst) => (`
     <tr>
       <td>${i}</td>
-      <td>${name}</td>
+      <td class="bracket-select" name="${id}">${name}</td>
       <td>${avg.toFixed(1)}</td>
       <td>${best}</td>
       <td>${worst}</td>
     </tr>
   `);
 
-  const UpsetRowComponent = (name, selected, correct) => (`
+  const UpsetRowComponent = (id, name, selected, correct) => (`
     <tr>
       <td></td>
-      <td>${name}</td>
+      <td class="bracket-select" name="${id}">${name}</td>
       <td>${selected}</td>
       <td>${correct}</td>
     </tr>
@@ -232,6 +243,38 @@
         <td>${avg.toFixed(1)}</td>
         <td>${displayPct(win)}</td>
       </tr>
+    `);
+  };
+
+  const BracketModalComponent = (name, selections, teamInfo) => {
+    const Table = (teams) => {
+      const split = teams.flatMap((_, i, a) => i % 2 ? [] : [a.slice(i, i + 2)]);
+      const rows = split.map(r => (`
+        <tr>
+          ${r.map(t => (`<td>${teamInfo[t].display_name}</td>`)).join('')}
+        </tr>
+      `)).join('')
+      return (`<table class="bracket-table text">${rows}</table>`)
+    }
+
+    return (`
+      <h4 class="center">${name}</h4>
+      <div class="center">
+        <img src="${teamInfo[selections.CHAMP[0]].img}" height="36">
+        <h6>${teamInfo[selections.CHAMP[0]].name}</h6>
+      </div>
+      <div class="x3-b16">
+        <div class="th-border semibold x3-t8">NCG</div>
+        ${Table([...selections.CHAMP, ...selections.NCG])}
+        <div class="th-border semibold x3-t8">F4</div>
+        ${Table(selections.F4)}
+        <div class="th-border semibold x3-t8">E8</div>
+        ${Table(selections.E8)}
+        <div class="th-border semibold x3-t8">S16</div>
+        ${Table(selections.S16)}
+        <div class="th-border semibold x3-t8">R32</div>
+        ${Table(selections.R32)}
+      </div>
     `);
   }
 
@@ -278,7 +321,7 @@
     // leaderboard
     analysis.current_scores.forEach((x, i) => {
       $('#leaderboard-table').append(
-        LeaderboardRowComponent(i + 1, x.name, x.pts, x.max, x.ff, analysis.team_info)
+        LeaderboardRowComponent(i + 1, x.id, x.name, x.pts, x.max, x.ff, analysis.team_info)
       );
     });
     initToggle($('#leaderboard-toggle'), $('#leaderboard-table').children(), 10);
@@ -288,7 +331,7 @@
     rounds.forEach(round => {
       analysis.projection_board[round].forEach((x, i) => {
         $(`#projection-table`).append(
-          ProjectionRowComponent(i + 1, x.name, x.pts, x.max, x.win, round)
+          ProjectionRowComponent(i + 1, x.id, x.name, x.pts, x.max, x.win, round)
         );
       });
     });
@@ -303,7 +346,7 @@
     // rankings
     analysis.rankings.forEach((x, i) => {
       $('#rank-table').append(
-        RankRowComponent(i + 1, x.name, x.avg, x.best, x.worst)
+        RankRowComponent(i + 1, x.id, x.name, x.avg, x.best, x.worst)
       );
     });
     initToggle($('#rank-toggle'), $('#rank-table').children(), 15);
@@ -311,7 +354,7 @@
     // upsets
     analysis.upsets_chosen.forEach(x => {
       $('#upset-table').append(
-        UpsetRowComponent(x.name, x.chosen, x.correct)
+        UpsetRowComponent(x.id, x.name, x.chosen, x.correct)
       );
     });
     initToggle($('#upset-toggle'), $('#upset-table').children(), 15);
@@ -323,6 +366,9 @@
       );
     });
     initToggle($('#team-popularity-toggle'), $('#team-popularity-table').children(), 16);
+
+    // bracket modals
+    initBracketModals(analysis.bracket_selections, analysis.team_info);
   };
 
 
@@ -364,6 +410,19 @@
     });
   };
 
+
+  // bracket modals
+  const initBracketModals = (selections, teamInfo) => {
+    $('.bracket-select').on('click', (e) => {
+      const name = $(e.target).text();
+      const id = $(e.target).attr('name');
+      $('#bracket-modal-content').empty()
+      $('#bracket-modal-content').append(
+        BracketModalComponent(name, selections[id], teamInfo)
+      );
+      openModal('bracket-modal');
+    })
+  }
 
 </script>
 

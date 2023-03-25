@@ -101,6 +101,20 @@ i:hover {
   color: #aeaeae;
 }
 
+.bracket-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.bracket-select {
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bracket-select:hover {
+  text-decoration: underline;
+}
+
 
 
 .x3-blue-bg {
@@ -465,7 +479,7 @@ x3-radio-label {
 /* Modal Content/Box */
 .modal-content {
   background-color: #fefefe;
-  margin: 15% auto;
+  margin: 40px auto;
   /* 15% from the top and centered */
   padding: 20px;
   border: 1px solid #777;
