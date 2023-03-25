@@ -66,7 +66,7 @@ def lambda_handler(event, context):
 
     # run simulation
     try:
-        sim_results = group_simulation(
+        sim_results, team_champ = group_simulation(
             brackets, key, teams, eliminated, n_iter
         )
     except Exception as e:
@@ -75,7 +75,7 @@ def lambda_handler(event, context):
     # get analysis
     try:
         analysis = group_analysis(
-            brackets, sim_results, key, eliminated, teams
+            brackets, sim_results, team_champ, key, eliminated, teams
         )
     except Exception as e:
         return response({'error': 'group_analysis: %s' % e}, 500)

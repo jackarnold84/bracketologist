@@ -55,12 +55,14 @@ def fetch_bracket_key(id=SAMPLE_ID, year=CURRENT_YEAR, active=False, limit=None)
                 'abbrev': abbrev1,
                 'seed': int(seed1),
                 'stat_seed': get_stat_seed(abbrev1),
+                'img': m.select('.logo')[0]['src'],
             }
             teams[abbrev2] = {
                 'name': name2,
                 'abbrev': abbrev2,
                 'seed': int(seed2),
                 'stat_seed': get_stat_seed(abbrev2),
+                'img': m.select('.logo')[1]['src'],
             }
 
     key = selections
@@ -126,6 +128,19 @@ def get_bracket_upsets(bracket, key, teams):
     return upsets_chosen, upsets_correct, upsets_played
 
 
+def get_bracket_selections(bracket):
+    categories = ['CHAMP', 'NCG', 'F4', 'E8', 'S16', 'R32']
+    selections = {c: [] for c in categories}
+    added = set()
+    for i, r in enumerate(reversed(rounds)):
+        for m in round_matchups[r]:
+            sel = bracket['selections'][m]['selected']
+            if sel not in added:
+                selections[categories[i]].append(sel)
+                added.add(sel)
+    return selections
+
+
 def sim_game(t1, t2, teams):
     t1_seed = teams[t1]['stat_seed'] or teams[t1]['seed']
     t2_seed = teams[t2]['stat_seed'] or teams[t2]['seed']
@@ -153,8 +168,11 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
         b: {r: {'scores': [], 'ranks': []} for r in rounds}
         for b in brackets
     }
+    team_champ = {t: 0 for t in teams}
     for _ in range(N):
         sim = sim_bracket(key, teams)
+        champ = sim[63]['selected']
+        team_champ[champ] += 1
         scores = {
             b: {
                 r: get_bracket_score(brackets[b], sim, eliminated, r)[0]
@@ -174,7 +192,8 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
                 sim_data[b][r]['scores'].append(scores[b][r])
                 sim_data[b][r]['ranks'].append(ranks[r].index(b) + 1)
 
-    return sim_data
+    team_champ = {t: team_champ[t] / N for t in team_champ}
+    return sim_data, team_champ
 
 
 # analysis helpers
@@ -188,27 +207,23 @@ def pct_limit(x):
 
 
 def get_final_four(bracket):
-    ff = [bracket['champion']]
-    for m in [63, 62, 61]:
-        if bracket['selections'][m]['team1'] not in ff:
-            ff.append(bracket['selections'][m]['team1'])
-        elif bracket['selections'][m]['team2'] not in ff:
-            ff.append(bracket['selections'][m]['team2'])
-    return ff
+    selections = get_bracket_selections(bracket)
+    return [*selections['CHAMP'], *selections['NCG'], *selections['F4']]
 
 
 # MAIN ANALYSIS FUNCTION
 
-def group_analysis(brackets, sim_results, key, eliminated, teams):
+def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
 
     # current scores
     current_scores = [
         {
-            'name': brackets[b]['display_name'],
-            'pts': get_bracket_score(brackets[b], key, eliminated)[0],
-            'max': get_bracket_score(brackets[b], key, eliminated)[1],
-            'ff': get_final_four(brackets[b]),
-        } for b in brackets
+            'id': b['id'],
+            'name': b['display_name'],
+            'pts': get_bracket_score(b, key, eliminated)[0],
+            'max': get_bracket_score(b, key, eliminated)[1],
+            'ff': get_final_four(b),
+        } for b in brackets.values()
     ]
     current_scores = sorted(
         current_scores,
@@ -220,6 +235,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     projection_board = {
         r: [
             {
+                'id': brackets[b]['id'],
                 'name': brackets[b]['display_name'],
                 'pts': round(np.mean(sim_results[b][r]['scores'])),
                 'max': get_bracket_score(brackets[b], key, eliminated, r)[1],
@@ -237,6 +253,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     # projected rank
     rankings = [
         {
+            'id': brackets[b]['id'],
             'name': brackets[b]['display_name'],
             'avg': round(np.mean(sim_results[b]['NCG']['ranks']), 3),
             'worst': max(sim_results[b]['NCG']['ranks']),
@@ -251,14 +268,15 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
     # upsets chosen
     upsets_chosen = [
         {
-            'name': brackets[b]['display_name'],
-            'chosen': get_bracket_upsets(brackets[b], key, teams)[0],
-            'n_correct': get_bracket_upsets(brackets[b], key, teams)[1],
+            'id': b['id'],
+            'name': b['display_name'],
+            'chosen': get_bracket_upsets(b, key, teams)[0],
+            'n_correct': get_bracket_upsets(b, key, teams)[1],
             'correct': '%d/%d' % (
-                get_bracket_upsets(brackets[b], key, teams)[1],
-                get_bracket_upsets(brackets[b], key, teams)[2],
+                get_bracket_upsets(b, key, teams)[1],
+                get_bracket_upsets(b, key, teams)[2],
             ),
-        } for b in brackets
+        } for b in brackets.values()
     ]
     upsets_chosen = sorted(
         upsets_chosen,
@@ -275,13 +293,14 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
             'display_seed': '%s (%d)' % (
                 teams[t]['name'] if len(teams[t]['name']) < 11 else t,
                 teams[t]['seed'],
-            )
+            ),
         } for t in teams
     }
 
     # most popular teams
     team_popularity = [
         {
+            'abbrev': t,
             'team': team_info[t]['display_name'],
             'seed': team_info[t]['seed'],
             'avg': round(
@@ -291,6 +310,7 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
                 ),
                 3
             ),
+            'win': pct_limit(round(team_champ[t] * 100, 3)),
         } for t in teams
     ]
     team_popularity = sorted(
@@ -298,6 +318,12 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
         key=lambda x: (x['avg'], -x['seed']),
         reverse=True
     )
+
+    # bracket selections
+    bracket_selections = {
+        b['id']: get_bracket_selections(b)
+        for b in brackets.values()
+    }
 
     # return analysis
     timestamp = round(time.time())
@@ -308,5 +334,6 @@ def group_analysis(brackets, sim_results, key, eliminated, teams):
         'rankings': rankings,
         'upsets_chosen': upsets_chosen,
         'team_info': team_info,
-        'team_popularity': team_popularity
+        'team_popularity': team_popularity,
+        'bracket_selections': bracket_selections,
     }
