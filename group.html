@@ -127,12 +127,13 @@
 
       <!-- popular teams -->
       <div class="x3-row auto x3-b48" style="max-width: 500px;">
-        <h5 class="center">Most Popular Teams</h5>
+        <h5 class="center">Most Selected Teams</h5>
         <table id="team-popularity-table" class="w3-table text w3-bordered">
           <tr class="th-border">
             <th></th>
             <th>Team</th>
             <th>Avg Wins</th>
+            <th>Win NCG</th>
           </tr>
         </table>
         <div id="team-popularity-toggle" class="center x3-t8 toggle-link">
@@ -182,7 +183,7 @@
         </td>
       </tr>
     `);
-    };
+  };
 
   const ProjectionRowComponent = (i, name, exp, max, win, round) => {
     const opacity = (win / 100).toFixed(2);
@@ -192,7 +193,9 @@
         <td>${name}</td>
         <td>${exp}</td>
         <td>${max}</td>
-        <td style="background-color:rgb(83, 185, 255, ${opacity})">${win.toFixed(1)}%</td>
+        <td style="background-color:rgb(83, 185, 255, ${opacity})">
+          ${displayPct(win)}
+        </td>
       </tr>
     `);
   };
@@ -216,13 +219,21 @@
     </tr>
   `);
 
-  const TeamPopularityRowComponent = (i, team, seed, wins) => (`
-    <tr>
-      <td>${i}</td>
-      <td>${team} <span class="w3-small x3-l4">${seed}</span></td>
-      <td>${wins.toFixed(1)}</td>
-    </tr>
-  `);
+  const TeamPopularityRowComponent = (i, team, abbrev, seed, avg, win, teamInfo) => {
+    const eliminated = teamInfo[abbrev].eliminated;
+    const cls = eliminated ? 'eliminated' : '';
+    return (`
+      <tr class="${cls}">
+        <td>${i}</td>
+        <td>
+          <span>${team}</span>
+          <span class="w3-small x3-l4">${seed}</span>
+        </td>
+        <td>${avg.toFixed(1)}</td>
+        <td>${displayPct(win)}</td>
+      </tr>
+    `);
+  }
 
 </script>
 
@@ -308,7 +319,7 @@
     // team popularity
     analysis.team_popularity.slice(0, 32).forEach((x, i) => {
       $('#team-popularity-table').append(
-        TeamPopularityRowComponent(i + 1, x.team, x.seed, x.avg)
+        TeamPopularityRowComponent(i + 1, x.team, x.abbrev, x.seed, x.avg, x.win, analysis.team_info)
       );
     });
     initToggle($('#team-popularity-toggle'), $('#team-popularity-table').children(), 16);

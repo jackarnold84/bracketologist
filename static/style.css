@@ -97,6 +97,10 @@ i:hover {
   text-decoration: line-through;
 }
 
+.eliminated {
+  color: #aeaeae;
+}
+
 
 
 .x3-blue-bg {

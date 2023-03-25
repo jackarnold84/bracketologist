@@ -1,4 +1,11 @@
-// Common javascript utilities
+// javascript utilities
+
+const displayPct = (x) => {
+    if (x > 99.999) return '100%';
+    else if (x < 0.001) return '--';
+    else return `${x.toFixed(1)}%`;
+};
+
 
 //  sleep utility
 
