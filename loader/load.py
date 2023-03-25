@@ -48,9 +48,9 @@ def fetch_group_info(group_id, year='2023'):
 def get_display_name(username, bracket_name):
     if username in config.username_alias:
         return config.username_alias[username]
-    elif 'espnfan' in username.lower():
-        if 'espnfan' in bracket_name.lower():
-            return 'espnfan-%s' % (username[-4:])
+    elif 'espn' in username.lower():
+        if 'espn' in bracket_name.lower():
+            return 'espn-%s' % (username[-4:])
         else:
             return bracket_name[:12].strip()
     else:
