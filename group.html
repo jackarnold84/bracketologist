@@ -178,16 +178,16 @@
 <script>
 
   const LeaderboardRowComponent = (i, id, name, pts, max, ff, teamInfo) => {
-    const TeamIcon = (team, main=false) => {
+    const TeamIcon = (team, main = false) => {
       const img = teamInfo[team].img;
-      const eliminated = teamInfo[team].eliminated;
+      const eliminated = !advancedToRound(team, teamInfo, 'F4');
       const cls = eliminated ? 'eliminated-img' : '';
       return img ? (`
         <img src="${img}" class="${main ? 'team-icon-main' : 'team-icon'} ${cls}">
       `) : (`
         <span class="x3-r4 ${cls}">${team}</span>
       `);
-    }
+    };
 
     return (`
       <tr>
@@ -196,7 +196,7 @@
         <td>${pts}</td>
         <td>${max}</td>
         <td>
-          ${TeamIcon(ff[0], height='24')}
+          ${TeamIcon(ff[0], height = '24')}
           ${TeamIcon(ff[1])}
           ${TeamIcon(ff[2])}
           ${TeamIcon(ff[3])}
@@ -256,11 +256,16 @@
   };
 
   const BracketModalComponent = (name, selections, teamInfo) => {
-    const Table = (teams) => {
+    const Table = (teams, round) => {
       const split = teams.flatMap((_, i, a) => i % 2 ? [] : [a.slice(i, i + 2)]);
       const rows = split.map(r => (`
         <tr>
-          ${r.map(t => (`<td>${teamInfo[t].display_name}</td>`)).join('')}
+          ${r.map(t => {
+            const adv = advancedToRound(t, teamInfo, round);
+            console.log(round)
+            const cls = adv ? 'correct' : teamInfo[t].eliminated ? 'incorrect' : '';
+            return(`<td class="${cls}">${teamInfo[t].display_name}</td>`)
+          }).join('')}
         </tr>
       `)).join('')
       return (`<table class="bracket-table text">${rows}</table>`)
@@ -274,18 +279,24 @@
       </div>
       <div class="x3-b16">
         <div class="th-border semibold x3-t8">NCG</div>
-        ${Table([...selections.CHAMP, ...selections.NCG])}
+        ${Table([...selections.CHAMP, ...selections.NCG], 'NCG')}
         <div class="th-border semibold x3-t8">F4</div>
-        ${Table(selections.F4)}
+        ${Table(selections.F4, 'F4')}
         <div class="th-border semibold x3-t8">E8</div>
-        ${Table(selections.E8)}
+        ${Table(selections.E8, 'E8')}
         <div class="th-border semibold x3-t8">S16</div>
-        ${Table(selections.S16)}
+        ${Table(selections.S16, 'S16')}
         <div class="th-border semibold x3-t8">R32</div>
-        ${Table(selections.R32)}
+        ${Table(selections.R32, 'R32')}
       </div>
     `);
-  }
+  };
+
+  const advancedToRound = (team, teamInfo, round = 'CHAMP') => {
+    const roundIdx = { 'R64': 1, 'R32': 2, 'S16': 3, 'E8': 4, 'F4': 5, 'NCG': 6, 'CHAMP': 7 };
+    const actual = teamInfo[team].round;
+    return roundIdx[actual] >= roundIdx[round];
+  };
 
 </script>
 
@@ -340,7 +351,7 @@
     rounds.forEach(round => {
       analysis.projection_board[round].forEach((x, i) => {
         $(`#projection-table`).append(
-          ProjectionRowComponent(i + 1, x.id, x.name, x.pts, x.max, x.win, round)
+          ProjectionRowComponent(i + 1, x.id, x.name, x.exp, x.max, x.win, round)
         );
       });
     });

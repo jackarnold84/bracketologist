@@ -131,6 +131,16 @@ i:hover {
   text-decoration: underline;
 }
 
+.correct {
+  color: #518c36;
+}
+
+.incorrect {
+  color: #a1a1a1;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
 
 
 .x3-blue-bg {

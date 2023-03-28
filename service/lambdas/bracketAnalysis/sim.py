@@ -215,6 +215,15 @@ def get_final_four(bracket):
     selections = get_bracket_selections(bracket)
     return [*selections['CHAMP'], *selections['NCG'], *selections['F4']]
 
+def get_team_round_status(t, key):
+    if t == key[63]['selected']:
+        return 'CHAMP'
+    for r in reversed(round_matchups):
+        for m in round_matchups[r]:
+            if t == key[m]['team1'] or t == key[m]['team2']:
+                return r
+    return 'R64'
+
 
 # MAIN ANALYSIS FUNCTION
 
@@ -242,7 +251,7 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
             {
                 'id': brackets[b]['id'],
                 'name': brackets[b]['display_name'],
-                'pts': round(np.mean(sim_results[b][r]['scores'])),
+                'exp': round(np.mean(sim_results[b][r]['scores'])),
                 'max': get_bracket_score(brackets[b], key, eliminated, r)[1],
                 'win': pct_limit(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100),
             } for b in brackets
@@ -251,7 +260,7 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
     for r in projection_board:
         projection_board[r] = sorted(
             projection_board[r],
-            key=lambda x: (x['win'], x['pts'], x['max']),
+            key=lambda x: (x['win'], x['exp'], x['max']),
             reverse=True
         )
 
@@ -299,6 +308,7 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
                 teams[t]['name'] if len(teams[t]['name']) < 11 else t,
                 teams[t]['seed'],
             ),
+            'round': get_team_round_status(t, key),
         } for t in teams
     }
 
