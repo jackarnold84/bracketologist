@@ -178,12 +178,12 @@
 <script>
 
   const LeaderboardRowComponent = (i, id, name, pts, max, ff, teamInfo) => {
-    const TeamIcon = (team, main = false) => {
+    const TeamIcon = (team, round) => {
       const img = teamInfo[team].img;
-      const eliminated = !advancedToRound(team, teamInfo, 'F4');
+      const eliminated = teamInfo[team].eliminated && !advancedToRound(team, teamInfo, round);
       const cls = eliminated ? 'eliminated-img' : '';
       return img ? (`
-        <img src="${img}" class="${main ? 'team-icon-main' : 'team-icon'} ${cls}">
+        <img src="${img}" class="${round === 'CHAMP' ? 'team-icon-main' : 'team-icon'} ${cls}">
       `) : (`
         <span class="x3-r4 ${cls}">${team}</span>
       `);
@@ -196,10 +196,10 @@
         <td>${pts}</td>
         <td>${max}</td>
         <td>
-          ${TeamIcon(ff[0], height = '24')}
-          ${TeamIcon(ff[1])}
-          ${TeamIcon(ff[2])}
-          ${TeamIcon(ff[3])}
+          ${TeamIcon(ff[0], 'CHAMP')}
+          ${TeamIcon(ff[1], 'NCG')}
+          ${TeamIcon(ff[2], 'F4')}
+          ${TeamIcon(ff[3], 'F4')}
         </td>
       </tr>
     `);
@@ -261,11 +261,11 @@
       const rows = split.map(r => (`
         <tr>
           ${r.map(t => {
-            const adv = advancedToRound(t, teamInfo, round);
-            console.log(round)
-            const cls = adv ? 'correct' : teamInfo[t].eliminated ? 'incorrect' : '';
-            return(`<td class="${cls}">${teamInfo[t].display_name}</td>`)
-          }).join('')}
+        const adv = advancedToRound(t, teamInfo, round);
+        console.log(round)
+        const cls = adv ? 'correct' : teamInfo[t].eliminated ? 'incorrect' : '';
+        return (`<td class="${cls}">${teamInfo[t].display_name}</td>`);
+      }).join('')}
         </tr>
       `)).join('')
       return (`<table class="bracket-table text">${rows}</table>`)
