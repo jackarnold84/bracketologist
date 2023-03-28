@@ -55,7 +55,9 @@ def lambda_handler(event, context):
 
     # fetch bracket key
     try:
-        key, teams = fetch_bracket_key(year=year, active=active, limit=limit)
+        sample_id = next(iter(brackets))
+        key, teams = fetch_bracket_key(
+            sample_id, year, group['type'], active=active, limit=limit)
         eliminated = get_eliminated_teams(key)
     except Exception as e:
         return response({'error': 'fetching bracket key: %s' % e}, 500)

@@ -157,17 +157,20 @@
   // update group submit
   const handleSubmit = (e) => {
     e.preventDefault();
-    $('#message-text').text('');
-    $('#error-text').text('');
-    $('#loader-holder').addClass('loader-bar');
-
     const groupID = $('#group-select').val();
     const limit = $('#limit-input').val();
+
+    $('#message-text').text(`Updating group ${groupID}`);
+    $('#error-text').text('');
+    $('#loader-holder').addClass('loader-bar');
 
     bracketAnalysisAPI(authToken, groupID, limit)
       .then(response => {
         $('#loader-holder').removeClass('loader-bar');
-        if (response.success) {
+        if (!response) {
+          $('#message-text').text(`Request timed out, check the group shortly (${groupID})`);
+        }
+        else if (response.success) {
           $('#message-text').text(`Group successfully updated (${groupID})`);
         } else {
           $('#error-text').text(`Error occurred: ${response.error}`);

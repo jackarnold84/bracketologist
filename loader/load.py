@@ -15,14 +15,15 @@ import config
 import db
 
 
-def fetch_group_info(group_id, year='2023'):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket/%s/en/group?groupID=%s' % (
-        str(year), str(group_id)
+def fetch_group_info(group_id, year, type):
+    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/group?groupID=%s' % (
+        '-women' if type == 'womens' else '', str(year), str(group_id),
     )
     service = Service(executable_path=credentials.path_to_chromedriver)
     options = Options()
     options.add_argument('--headless')
     options.add_argument('--ignore-certificate-errors')
+    options.add_argument("--log-level=3")
     driver = webdriver.Chrome(service=service, options=options)
 
     driver.get(url)
@@ -39,7 +40,7 @@ def fetch_group_info(group_id, year='2023'):
         'group_name': group_name,
         'url': url,
         'year': str(year),
-        'type': 'mens',
+        'type': type,
         'brackets': bracket_ids,
         'analysis': {},
     }
@@ -57,9 +58,9 @@ def get_display_name(username, bracket_name):
         return username[:12].strip()
 
 
-def fetch_bracket(id, year='2023'):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket/%s/en/entry?entryID=%s' % (
-        str(year), str(id)
+def fetch_bracket(id, year, type):
+    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/entry?entryID=%s' % (
+        '-women' if type == 'womens' else '', str(year), str(id)
     )
     req = requests.get(url)
     soup = BeautifulSoup(req.content, features='lxml')
@@ -99,16 +100,16 @@ def fetch_bracket(id, year='2023'):
         'display_name': get_display_name(username, bracket_name),
         'url': url,
         'year': str(year),
-        'type': 'mens',
+        'type': type,
         'champion': selections[63]['selected'],
         'selections': selections,
     }
 
 
-def fetch_group_brackets(group_info):
+def fetch_group_brackets(group_info, year, type):
     brackets = {}
     for id in tqdm(group_info['brackets']):
-        b = fetch_bracket(id)
+        b = fetch_bracket(id, year, type)
         if b:
             brackets[id] = b
         else:
@@ -125,9 +126,11 @@ group_to_load = sys.argv[1] if len(sys.argv) > 1 else None
 
 if not group_to_load:
     print('group not spcified')
+    print('must be one of:', list(config.groups.keys()))
     exit(1)
 elif group_to_load not in config.groups:
     print('invalid group name')
+    print('must be one of:', list(config.groups.keys()))
     exit(1)
 
 
@@ -146,10 +149,11 @@ print('--> aws sdk connected')
 # fetch group, brackets
 group_id = config.groups[group_to_load]['group_id']
 year = config.groups[group_to_load]['year']
+group_type = config.groups[group_to_load]['type']
 
 print('--> loading %s' % group_to_load)
-group = fetch_group_info(group_id)
-brackets = fetch_group_brackets(group)
+group = fetch_group_info(group_id, year, group_type)
+brackets = fetch_group_brackets(group, year, group_type)
 
 
 # insert into db

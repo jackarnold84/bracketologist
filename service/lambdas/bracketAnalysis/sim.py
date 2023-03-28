@@ -12,9 +12,9 @@ from config import (
 )
 
 
-def fetch_bracket_key(id=SAMPLE_ID, year=CURRENT_YEAR, active=False, limit=None):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket/%s/en/entry?entryID=%s' % (
-        str(year), str(id)
+def fetch_bracket_key(id, year, type='mens', active=False, limit=None):
+    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/entry?entryID=%s' % (
+        '-women' if type == 'womens' else '', str(year), str(id)
     )
     req = requests.get(url)
     soup = BeautifulSoup(req.content, 'lxml')
@@ -24,7 +24,12 @@ def fetch_bracket_key(id=SAMPLE_ID, year=CURRENT_YEAR, active=False, limit=None)
 
     m_classes = ['.m_' + str(i+1) for i in range(63)]
     matchups = [soup.select(mc)[0] for mc in m_classes]
-    include_only = matchup_order[:limit] if active and limit is not None else None
+    include_only = None
+    if limit is not None:
+        if active:
+            include_only = matchup_order[:limit]
+        else:
+            include_only = list(range(1, 64))[:limit]
 
     selections = {}
     teams = {}
