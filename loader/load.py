@@ -1,39 +1,42 @@
-# fetches groups, brackets and stores in dynamoDB
-# aws credentials must be defined in credentials.py
-
 import sys
-import requests
 import time
+
+import config
+import credentials
+import db
+import utils
+from boto3.session import Session
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from boto3.session import Session
+from selenium.webdriver.chrome.service import Service
 from tqdm import tqdm
-import credentials
-import config
-import db
+
+service = Service(executable_path=credentials.path_to_chromedriver)
+options = Options()
+options.add_argument('--headless')
+driver = webdriver.Chrome(service=service, options=options)
 
 
-def fetch_group_info(group_id, year, type):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/group?groupID=%s' % (
-        '-women' if type == 'womens' else '', str(year), str(group_id),
-    )
-    service = Service(executable_path=credentials.path_to_chromedriver)
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument("--log-level=3")
-    driver = webdriver.Chrome(service=service, options=options)
+def fetch_group_info(group_id, year, type, group_name):
+    type_tag = '-women' if type == 'womens' else ''
+    url = f'https://fantasy.espn.com/games/tournament-challenge-bracket{type_tag}-{year}/group?id={group_id}'
 
     driver.get(url)
-    time.sleep(12)
+    time.sleep(8)
     soup = BeautifulSoup(driver.page_source, features='lxml')
-    driver.quit()
 
-    group_name = soup.select('.group-header')[0].text
-    entries = soup.select('.entry')
-    bracket_ids = [e['href'].rsplit('=')[-1] for e in entries]
+    bracket_ids = []
+    bracket_names = []
+    users = []
+    for x in soup.select('.EntryLink-nameContainer'):
+        username = x.select_one('.EntryLink-memberName').text
+        entry_link = x.select_one('.AnchorLink')
+        bracket_name = entry_link.text
+        bracket_id = entry_link['href'].rsplit('?id=', 1)[1]
+        bracket_ids.append(bracket_id)
+        bracket_names.append(utils.clean_text(bracket_name))
+        users.append(utils.clean_text(username))
 
     return {
         'group_id': group_id,
@@ -42,6 +45,8 @@ def fetch_group_info(group_id, year, type):
         'year': str(year),
         'type': type,
         'brackets': bracket_ids,
+        'bracket_names': bracket_names,
+        'users': users,
         'analysis': {},
     }
 
@@ -58,65 +63,65 @@ def get_display_name(username, bracket_name):
         return username[:12].strip()
 
 
-def fetch_bracket(id, year, type):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/entry?entryID=%s' % (
-        '-women' if type == 'womens' else '', str(year), str(id)
-    )
-    req = requests.get(url)
-    soup = BeautifulSoup(req.content, features='lxml')
+def fetch_bracket(bracket_id, year, type, username, bracket_name):
+    type_tag = '-women' if type == 'womens' else ''
+    url = f'https://fantasy.espn.com/games/tournament-challenge-bracket{type_tag}-{year}/bracket?id={bracket_id}'
 
-    bracket_name = soup.select('.entry-details-entryname')[0].text
-    profile_link = soup.select('.profileLink')[0]
-    username = profile_link.text
+    driver.get(url)
+    time.sleep(5)
+    soup = BeautifulSoup(driver.page_source)
+    assert len(soup.select('.BracketProposition-pickSection')) == 62
 
-    m_classes = ['.m_' + str(i+1) for i in range(63)]
-    if not soup.select(m_classes[0]):
-        print('could not load bracket: %s, %s' % (id, bracket_name))
-        return None
-    matchups = [soup.select(mc)[0] for mc in m_classes]
+    picks = {}
+    full_name_map = {}
+    champ_full_name = soup.select_one('.PrintChampionshipPickBody-outcomeName').text
 
-    selections = {}
-    for i, m in enumerate(matchups):
-        matchup = i + 1
-        loc1 = 1 if matchup >= 33 else 0
-        loc2 = 3 if matchup >= 33 else 1
-        advanced = m.select('.selectedToAdvance')[0].select('.abbrev')[0].text
+    for x in soup.select('.BracketProposition-pickSection'):
+        t = x.select_one('.BracketPropositionPick-pickText').text
+        full_name = x.select_one('.BracketPropositionPick-image')['alt']
+        full_name_map[full_name] = t
+        if t not in picks:
+            picks[t] = 1
+        else:
+            picks[t] += 1
 
-        abbrev1 = m.select('.abbrev')[loc1].text
-        selected1 = abbrev1 == advanced
-        abbrev2 = m.select('.abbrev')[loc2].text
-        selected2 = abbrev2 == advanced
+    assert champ_full_name in full_name_map
+    picks[full_name_map[champ_full_name]] += 1
 
-        selections[i+1] = {
-            'team1': abbrev1,
-            'team2': abbrev2,
-            'selected': abbrev1 if selected1 else abbrev2 if selected2 else ''
-        }
+    picks = {
+        k: v for k, v in sorted(
+            picks.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+    }
+    champ = picks.values()[0]
 
     return {
-        'id': str(id),
+        'id': str(bracket_id),
         'username': username,
         'bracket_name': bracket_name,
         'display_name': get_display_name(username, bracket_name),
         'url': url,
         'year': str(year),
         'type': type,
-        'champion': selections[63]['selected'],
-        'selections': selections,
+        'champion': champ,
+        'selections': picks,
     }
 
 
 def fetch_group_brackets(group_info, year, type):
     brackets = {}
-    for id in tqdm(group_info['brackets']):
-        b = fetch_bracket(id, year, type)
+    for i in tqdm(range(len(group_info['brackets']))):
+        bracket_id = group_info['brackets'][i]
+        bracket_name = group_info['bracket_names'][i]
+        username = group_info['users'][i]
+        b = fetch_bracket(bracket_id, year, type, username, bracket_name)
         if b:
-            brackets[id] = b
+            brackets[bracket_id] = b
         else:
-            group_info['brackets'].pop(
-                group_info['brackets'].index(id)
-            )
-        time.sleep(8)
+            group_info['brackets'].pop(i)
+        time.sleep(4)
     return brackets
 
 
@@ -150,11 +155,12 @@ print('--> aws sdk connected')
 group_id = config.groups[group_to_load]['group_id']
 year = config.groups[group_to_load]['year']
 group_type = config.groups[group_to_load]['type']
+group_name = config.groups[group_to_load]['name']
 
 print('--> loading %s' % group_to_load)
-group = fetch_group_info(group_id, year, group_type)
-brackets = fetch_group_brackets(group, year, group_type)
+group = fetch_group_info(group_id, year, group_type, group_name)
 
+brackets = fetch_group_brackets(group, year, group_type)
 
 # insert into db
 group_db.insert_group(group)
