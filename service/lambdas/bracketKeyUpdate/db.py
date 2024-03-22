@@ -1,12 +1,14 @@
 # class interfaces for dynamodb tables
 
-import boto3
-import json
 from decimal import Decimal
+
+import boto3
+import simplejson as json
 
 
 def format_item(item):
-    return json.loads(json.dumps(item), parse_float=Decimal)
+    json_str = json.dumps(item, use_decimal=True)
+    return json.loads(json_str, parse_float=Decimal)
 
 
 class GroupDB:
