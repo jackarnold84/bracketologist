@@ -1,45 +1,28 @@
 // configuration file
 
 const groupMeta = {
-    'capones-2023': {
-        'name': 'Capones Night Club',
-        'tag': 'capones-2023',
-        'groupID': '4807922',
-        'year': 2023,
+    'capones-2024': {
+        name: "Capone's 2024",
+        tag: 'capones-2024',
+        groupID: '38fa0dce-43f6-300d-9551-bb8dae6f38e7',
+        year: 2024,
     },
-    'carlos-boozers': {
-        'name': 'Carlos Boozers',
-        'tag': 'carlos-boozers',
-        'groupID': '5987814',
-        'year': 2023,
+    'carlos-boozer-2024': {
+        name: 'Carlos Boozer 2024',
+        tag: 'carlos-boozer-2024',
+        groupID: '5b3a6e62-4c5f-4d2d-a61d-07859ce62170',
+        year: 2024,
     },
-    'c1-chitech': {
-        'name': 'Capital One ChiTech',
-        'tag': 'c1-chitech',
-        'groupID': '5192759',
-        'year': 2023,
+    'floriganders': {
+        name: 'Floriganders 2024',
+        tag: 'floriganders',
+        groupID: '88cca2f0-cd66-4972-932e-cea8dfd5a5f6',
+        year: 2024,
     },
-    'capones-women-2023': {
-        'name': 'Capones Women',
-        'tag': 'capones-women-2023',
-        'groupID': '139077',
-        'year': '2023',
-    },
-    'chicago-tdp-women-2023': {
-        'name': 'Chicago TDP Womens',
-        'tag': 'chicago-tdp-women-2023',
-        'groupID': '133223',
-        'year': '2023',
-    },
-    'c1-chitech-women': {
-        'name': 'Capital One ChiTech Womens',
-        'tag': 'c1-chitech-women',
-        'groupID': '118033',
-        'year': '2023',
-    },
-    'dev': {
-        'name': 'Dev Group',
-        'tag': 'dev',
-        'groupID': '000'
+    'partnerships-c1': {
+        name: 'Capital One Partnerships 2024',
+        tag: 'partnerships-c1',
+        groupID: '605bbb42-1be1-4fa7-9edb-26ab2f873239',
+        year: 2024,
     },
 };
