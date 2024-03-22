@@ -1,12 +1,11 @@
 import json
+
 import auth
-from utils import response, parseInt
-from db import GroupDB, BracketDB
-import config
-from sim import (
-    fetch_bracket_key, get_eliminated_teams, group_simulation,
-    group_analysis, apply_alt_display_names
-)
+from config import mens_team_metadata
+from db import BracketDB, GroupDB
+from sim import (apply_alt_display_names, fetch_bracket_key, group_analysis,
+                 group_simulation)
+from utils import response
 
 group_db = GroupDB()
 bracket_db = BracketDB()
@@ -15,9 +14,8 @@ bracket_db = BracketDB()
 def lambda_handler(event, context):
 
     # read payload
-    params = event['queryStringParameters']
+    params = event.get('queryStringParameters', {})
     group_id = params['groupID'] if 'groupID' in params else ''
-    limit = parseInt(params['limit']) if 'limit' in params else None
     body = json.loads(event['body']) if 'body' in event else {}
     auth_body = body['auth'] if 'auth' in body else {}
 
@@ -42,7 +40,6 @@ def lambda_handler(event, context):
     if not group:
         return response({'error': 'group %s not found' % group_id}, status=400)
     year = str(group['year'])
-    active = group['type'] == 'mens' and year == config.CURRENT_YEAR
 
     # read brackets
     brackets = {}
@@ -54,40 +51,30 @@ def lambda_handler(event, context):
     apply_alt_display_names(brackets)
 
     # fetch bracket key
-    try:
-        sample_id = next(iter(brackets))
-        key, teams = fetch_bracket_key(
-            sample_id, year, group['type'], active=active, limit=limit)
-        eliminated = get_eliminated_teams(key)
-    except Exception as e:
-        return response({'error': 'fetching bracket key: %s' % e}, 500)
+    key, eliminated = fetch_bracket_key(
+        group_db,
+        year, 
+        group['type'],
+    )
+    teams = mens_team_metadata
 
     # determine n iterations
     n_iter = 200000 // len(brackets)
-    n_iter = min(max(2000, n_iter), 10000)
+    n_iter = min(max(2000, n_iter), 5000)
 
     # run simulation
-    try:
-        sim_results, team_champ = group_simulation(
-            brackets, key, teams, eliminated, n_iter
-        )
-    except Exception as e:
-        return response({'error': 'group_simulation: %s' % e}, 500)
+    sim_results, team_champ = group_simulation(
+        brackets, key, teams, eliminated, n_iter
+    )
 
     # get analysis
-    try:
-        analysis = group_analysis(
-            brackets, sim_results, team_champ, key, eliminated, teams
-        )
-    except Exception as e:
-        return response({'error': 'group_analysis: %s' % e}, 500)
+    analysis = group_analysis(
+        brackets, sim_results, team_champ, key, eliminated, teams
+    )
 
     # write analysis
     group['analysis'] = analysis
-    try:
-        group_db.insert_group(group)
-    except Exception as e:
-        return response({'error': 'failed group_db write: %s' % e}, 500)
+    group_db.insert_group(group)
 
     return response({
         'success': True,

@@ -1,91 +1,20 @@
-from bs4 import BeautifulSoup
-import requests
 import time
-import numpy as np
 from random import random
-from utils import (
-    rounds, round_matchups, matchup_sequence,
-    matchup_score_value, matchup_max_seeds
-)
-from config import (
-    stat_seeds, matchup_order, CURRENT_YEAR, SAMPLE_ID,
-)
+
+import numpy as np
+from config import CURRENT_YEAR, mens_bracket
+from utils import (get_initial_matchups, get_score, get_team_list,
+                   matchup_sequence, pct_limit, rounds, seed_chalk_wins,
+                   wins_to_round)
 
 
-def fetch_bracket_key(id, year, type='mens', active=False, limit=None):
-    url = 'https://fantasy.espn.com/tournament-challenge-bracket%s/%s/en/entry?entryID=%s' % (
-        '-women' if type == 'womens' else '', str(year), str(id)
-    )
-    req = requests.get(url)
-    soup = BeautifulSoup(req.content, 'lxml')
-
-    def get_stat_seed(team):
-        return stat_seeds[team] if active and team in stat_seeds else None
-
-    m_classes = ['.m_' + str(i+1) for i in range(63)]
-    matchups = [soup.select(mc)[0] for mc in m_classes]
-    include_only = None
-    if limit is not None:
-        if active:
-            include_only = matchup_order[:limit]
-        else:
-            include_only = list(range(1, 64))[:limit]
-
-    selections = {}
-    teams = {}
-    for i, m in enumerate(matchups):
-        matchup = i + 1
-        loc1 = 0
-        loc2 = 2 if matchup >= 33 else 1
-
-        name1 = m.select('.name')[loc1].text
-        abbrev1 = m.select('.abbrev')[loc1].text
-        seed1 = m.select('.seed')[loc1].text
-        name2 = m.select('.name')[loc2].text
-        abbrev2 = m.select('.abbrev')[loc2].text
-        seed2 = m.select('.seed')[loc2].text
-        win_select = m.select('.winner')
-        winner = win_select[0].select('.abbrev')[0].text if win_select else ''
-        if include_only is not None:
-            winner = winner if matchup in include_only else ''
-
-        selections[i+1] = {
-            'team1': abbrev1,
-            'team2': abbrev2,
-            'selected': winner
-        }
-        if matchup <= 32:
-            teams[abbrev1] = {
-                'name': name1,
-                'abbrev': abbrev1,
-                'seed': int(seed1),
-                'stat_seed': get_stat_seed(abbrev1),
-                'img': m.select('.logo')[0]['src'],
-            }
-            teams[abbrev2] = {
-                'name': name2,
-                'abbrev': abbrev2,
-                'seed': int(seed2),
-                'stat_seed': get_stat_seed(abbrev2),
-                'img': m.select('.logo')[1]['src'],
-            }
-
-    key = selections
-    sorted_keys = sorted(teams, key=lambda x: (
-        teams[x]['seed'], teams[x]['abbrev']))
-    teams = {t: teams[t] for t in sorted_keys}
-    return key, teams
-
-
-def get_eliminated_teams(key):
-    eliminated = []
-    for x in key.values():
-        if x['selected']:
-            if x['selected'] == x['team1']:
-                eliminated.append(x['team2'])
-            elif x['selected'] == x['team2']:
-                eliminated.append(x['team1'])
-    return eliminated
+def fetch_bracket_key(group_db, year=CURRENT_YEAR, type='mens'):
+    item = group_db.read_group('key-mens')
+    team_list = get_team_list(mens_bracket)
+    
+    key = {t: item['key'].get(t, 0) for t in team_list}
+    eliminated = item['eliminated']
+    return key, set(eliminated)
 
 
 def apply_alt_display_names(brackets):
@@ -97,52 +26,46 @@ def apply_alt_display_names(brackets):
             brackets[b]['display_name'] = bname[:12].strip()
 
 
-def get_bracket_score(bracket, key, eliminated, round='NCG'):
+def get_bracket_score(picks, key, eliminated, round='NCG'):
     score = 0
     max_score = 0
-    last_matchup = round_matchups[round][-1]
-    for i in range(1, last_matchup + 1):
-        winner = key[i]['selected']
-        if winner:
-            if bracket['selections'][i]['selected'] == winner:
-                score += matchup_score_value[i]
+    for t in key:
+        curr_pts = get_score(min(key[t], picks.get(t, 0)), round)
+        total_pts = get_score(picks.get(t, 0), round)
+        score += curr_pts
+        if t in eliminated:
+            max_score += curr_pts
         else:
-            if bracket['selections'][i]['selected'] not in eliminated:
-                max_score += matchup_score_value[i]
+            max_score += total_pts
 
-    max_score += score
     return score, max_score
 
 
-def get_bracket_upsets(bracket, key, teams):
+def get_bracket_upsets(picks, key, eliminated, teams):
     upsets_chosen = 0
     upsets_correct = 0
     upsets_played = 0
-    for i in range(1, 64):
-        selected = bracket['selections'][i]['selected']
-        selected_seed = teams[selected]['seed']
-        winner = key[i]['selected']
 
-        if selected_seed > matchup_max_seeds[i]:
-            upsets_chosen += 1
-            if winner:
-                upsets_played += 1
-                if selected == winner:
-                    upsets_correct += 1
+    for t in picks:
+        chalk_wins = seed_chalk_wins.get(teams[t]['seed'], 0)
+        chosen = picks[t] - chalk_wins
+        if chosen > 0:
+            upsets_chosen += chosen
+            upsets_correct += max(min(picks[t], key[t]) - chalk_wins, 0)
+            if t in eliminated:
+                upsets_played += chosen
+            else:
+                upsets_played += max(key[t] - chalk_wins, 0)
 
     return upsets_chosen, upsets_correct, upsets_played
 
 
-def get_bracket_selections(bracket):
+def get_bracket_selections(picks):
     categories = ['CHAMP', 'NCG', 'F4', 'E8', 'S16', 'R32']
     selections = {c: [] for c in categories}
-    added = set()
-    for i, r in enumerate(reversed(rounds)):
-        for m in round_matchups[r]:
-            sel = bracket['selections'][m]['selected']
-            if sel not in added:
-                selections[categories[i]].append(sel)
-                added.add(sel)
+    for t in picks:
+        selections[wins_to_round[picks[t]]].append(t)
+
     return selections
 
 
@@ -154,18 +77,25 @@ def sim_game(t1, t2, teams):
 
 
 def sim_bracket(key, teams):
-    sim = {m: {x: key[m][x] for x in key[m]} for m in key}
+    sim_key = {t: 0 for t in teams}
+    matchups = get_initial_matchups(mens_bracket) + [[] for _ in range(32)]
+    keyr = {**key}
 
-    for m in sim:
-        if not sim[m]['selected']:
-            result = sim_game(sim[m]['team1'], sim[m]['team2'], teams)
-            sim[m]['selected'] = result
-            if m < 63:
-                next_matchup = matchup_sequence[m]['matchup']
-                slot = matchup_sequence[m]['slot']
-                sim[next_matchup][slot] = result
+    for i, m in enumerate(matchups[:-1]):
+        next = matchup_sequence[i]
+        if keyr[m[0]] > 0:
+            winner = m[0]
+        elif keyr[m[1]] > 0:
+            winner = m[1]
+        else:
+            winner = sim_game(m[0], m[1], teams)
 
-    return sim
+        keyr[winner] -= 1
+        sim_key[winner] += 1
+        matchups[next].append(winner)
+
+    sim_champ = matchups[63][0]
+    return sim_key, sim_champ
 
 
 def group_simulation(brackets, key, teams, eliminated, N=10000):
@@ -175,19 +105,18 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
     }
     team_champ = {t: 0 for t in teams}
     for _ in range(N):
-        sim = sim_bracket(key, teams)
-        champ = sim[63]['selected']
-        team_champ[champ] += 1
+        sim_key, sim_champ = sim_bracket(key, teams)
+        team_champ[sim_champ] += 1
         scores = {
             b: {
-                r: get_bracket_score(brackets[b], sim, eliminated, r)[0]
+                r: get_bracket_score(brackets[b]['selections'], sim_key, set(), r)[0]
                 for r in rounds
             } for b in brackets
         }
         ranks = {
             r: sorted(
                 scores,
-                key=lambda x: (scores[x][r], scores[x]['NCG'], random()),
+                key=lambda x: (scores[x][r], scores[x]['NCG'], x),
                 reverse=True
             )
             for r in rounds
@@ -201,28 +130,13 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
     return sim_data, team_champ
 
 
-# analysis helpers
-def pct_limit(x):
-    if x > 99.999:
-        return 100
-    elif x < 0.001:
-        return 0
-    else:
-        return min(max(x, 0.1), 99.9)
-
-
-def get_final_four(bracket):
-    selections = get_bracket_selections(bracket)
+def get_final_four(picks):
+    selections = get_bracket_selections(picks)
     return [*selections['CHAMP'], *selections['NCG'], *selections['F4']]
 
+
 def get_team_round_status(t, key):
-    if t == key[63]['selected']:
-        return 'CHAMP'
-    for r in reversed(round_matchups):
-        for m in round_matchups[r]:
-            if t == key[m]['team1'] or t == key[m]['team2']:
-                return r
-    return 'R64'
+    return wins_to_round[key[t]]
 
 
 # MAIN ANALYSIS FUNCTION
@@ -234,9 +148,9 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
         {
             'id': b['id'],
             'name': b['display_name'],
-            'pts': get_bracket_score(b, key, eliminated)[0],
-            'max': get_bracket_score(b, key, eliminated)[1],
-            'ff': get_final_four(b),
+            'pts': get_bracket_score(b['selections'], key, eliminated)[0],
+            'max': get_bracket_score(b['selections'], key, eliminated)[1],
+            'ff': get_final_four(b['selections']),
         } for b in brackets.values()
     ]
     current_scores = sorted(
@@ -252,7 +166,7 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
                 'id': brackets[b]['id'],
                 'name': brackets[b]['display_name'],
                 'exp': round(np.mean(sim_results[b][r]['scores'])),
-                'max': get_bracket_score(brackets[b], key, eliminated, r)[1],
+                'max': get_bracket_score(brackets[b]['selections'], key, eliminated, r)[1],
                 'win': pct_limit(np.mean([x == 1 for x in sim_results[b][r]['ranks']]) * 100),
             } for b in brackets
         ] for r in rounds
@@ -284,11 +198,11 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
         {
             'id': b['id'],
             'name': b['display_name'],
-            'chosen': get_bracket_upsets(b, key, teams)[0],
-            'n_correct': get_bracket_upsets(b, key, teams)[1],
+            'chosen': get_bracket_upsets(b['selections'], key, eliminated, teams)[0],
+            'n_correct': get_bracket_upsets(b['selections'], key, eliminated, teams)[1],
             'correct': '%d/%d' % (
-                get_bracket_upsets(b, key, teams)[1],
-                get_bracket_upsets(b, key, teams)[2],
+                get_bracket_upsets(b['selections'], key, eliminated, teams)[1],
+                get_bracket_upsets(b['selections'], key, eliminated, teams)[2],
             ),
         } for b in brackets.values()
     ]
@@ -320,10 +234,9 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
             'seed': team_info[t]['seed'],
             'avg': round(
                 np.mean(
-                    [sum([m['selected'] == t for m in b['selections'].values()])
-                     for b in brackets.values()]
+                    [b['selections'].get(t, 0) for b in brackets.values()],
                 ),
-                3
+                3,
             ),
             'win': pct_limit(round(team_champ[t] * 100, 3)),
         } for t in teams
@@ -336,7 +249,7 @@ def group_analysis(brackets, sim_results, team_champ, key, eliminated, teams):
 
     # bracket selections
     bracket_selections = {
-        b['id']: get_bracket_selections(b)
+        b['id']: get_bracket_selections(b['selections'])
         for b in brackets.values()
     }
 
