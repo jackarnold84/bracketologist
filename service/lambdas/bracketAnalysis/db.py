@@ -1,12 +1,14 @@
 # class interfaces for dynamodb tables
 
-import boto3
-import json
 from decimal import Decimal
+
+import boto3
+import simplejson as json
 
 
 def format_item(item):
-    return json.loads(json.dumps(item), parse_float=Decimal)
+    json_str = json.dumps(item, use_decimal=True)
+    return json.loads(json_str, parse_float=Decimal)
 
 
 class GroupDB:
@@ -37,19 +39,4 @@ class BracketDB:
         )
         if 'Item' not in data:
             return None
-        bracket = data['Item']
-        bracket['selections'] = {
-            int(k): v for k, v in bracket['selections'].items()
-        }
-        bracket['selections'] = {
-            k: v for k, v in sorted(bracket['selections'].items())
-        }
         return data['Item']
-
-    def insert_bracket(self, bracket):
-        bracket['selections'] = {
-            str(k): v for k, v in bracket['selections'].items()
-        }
-        self.table.put_item(
-            Item=format_item(bracket)
-        )

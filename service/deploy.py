@@ -7,7 +7,7 @@ from zipfile import ZipFile
 import credentials
 from boto3.session import Session
 
-# Updates all lambdas in the lambdas/ directory
+# Update lambda in the lambdas/ directory
 # aws credentials must be defined in credentials.py
 
 session = Session(
