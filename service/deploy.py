@@ -1,11 +1,13 @@
 import io
-import os
 import json
+import os
+import sys
 from zipfile import ZipFile
-from boto3.session import Session
-import credentials
 
-# Updates all lambdas in the lambdas/ directory
+import credentials
+from boto3.session import Session
+
+# Update lambda in the lambdas/ directory
 # aws credentials must be defined in credentials.py
 
 session = Session(
@@ -45,9 +47,19 @@ def update_lambda(lambda_name, lambda_code_path):
     print(json.dumps(status, indent=2))
 
 
-# iterate and call update for all lambdas in lambdas/ directory
-assert(os.path.isdir('service/lambdas/'))
-for dir_name in os.scandir('service/lambdas/'):
-    lambda_name = dir_name.name
-    lambda_code_path = 'service/lambdas/%s' % lambda_name
-    update_lambda(lambda_name, lambda_code_path)
+# check args
+args = sys.argv
+function_to_update = sys.argv[1] if len(sys.argv) > 1 else None
+
+assert (os.path.isdir('service/lambdas/'))
+functions = [d.name for d in os.scandir('service/lambdas/')]
+
+if function_to_update not in functions:
+    print('usage: python deploy.py <function_to_update>')
+    print('function_to_update must be one of:', functions)
+    exit(1)
+
+# call update with sdk
+lambda_name = function_to_update
+lambda_code_path = 'service/lambdas/%s' % lambda_name
+update_lambda(lambda_name, lambda_code_path)
