@@ -3,6 +3,7 @@ import json
 import urllib.request
 
 from config import game_date_to_wins
+from dateutil import tz
 from db import GroupDB
 from utils import response
 
@@ -30,7 +31,9 @@ def lambda_handler(event, context):
 
     for evt in res['events']:
         status = evt['status']['type']['name']
-        date = datetime.datetime.fromisoformat(evt['date']).date()
+        dt = datetime.datetime.fromisoformat(evt['date'])
+        dt_central = dt.replace(tzinfo=tz.gettz('UTC')).astimezone(tz=tz.gettz('America/Chicago'))
+        date = dt_central.date()
         if date not in game_date_to_wins:
             continue
 
