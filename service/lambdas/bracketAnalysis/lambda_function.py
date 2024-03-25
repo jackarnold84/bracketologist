@@ -63,9 +63,7 @@ def lambda_handler(event, context):
     n_iter = min(max(2000, n_iter), 5000)
 
     # run simulation
-    sim_results, team_champ = group_simulation(
-        brackets, key, teams, eliminated, n_iter
-    )
+    sim_results, team_champ = group_simulation(brackets, key, teams, n_iter)
 
     # get analysis
     analysis = group_analysis(

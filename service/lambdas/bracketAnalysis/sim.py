@@ -98,7 +98,7 @@ def sim_bracket(key, teams):
     return sim_key, sim_champ
 
 
-def group_simulation(brackets, key, teams, eliminated, N=10000):
+def group_simulation(brackets, key, teams, N=1000):
     sim_data = {
         b: {r: {'scores': [], 'ranks': []} for r in rounds}
         for b in brackets
@@ -116,7 +116,7 @@ def group_simulation(brackets, key, teams, eliminated, N=10000):
         ranks = {
             r: sorted(
                 scores,
-                key=lambda x: (scores[x][r], scores[x]['NCG'], x),
+                key=lambda x: (scores[x][r], scores[x]['NCG'], random()),
                 reverse=True
             )
             for r in rounds
