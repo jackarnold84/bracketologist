@@ -1,22 +1,20 @@
 import sys
 import time
 
-import config
-import credentials
-import db
-import utils
 from boto3.session import Session
 from bs4 import BeautifulSoup
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
 from tqdm import tqdm
 
-service = Service(executable_path=credentials.path_to_chromedriver)
+from . import config, credentials, db, utils
+
+service = Service(executable_path=credentials.path_to_msedgedriver)
 options = Options()
 options.add_argument('--headless')
 options.add_argument('log-level=3')
-driver = webdriver.Chrome(service=service, options=options)
+driver = webdriver.Edge(service=service, options=options)
 
 
 def fetch_group_info(group_id, year, type, group_name):

@@ -13,5 +13,5 @@ https://jackarnold84.github.io/bracketologist/
 Setup:
 - Add AWS key pair to `loader/credentials.py` and `service/credentials.py`
 - Add required information to each `config.*`
-- Fetch and store a group + brackets using `loader/load.py`
+- Fetch and store a group + brackets using `python -m loader.load <group-tag>`
 - Run analysis using the `admin.html` page
