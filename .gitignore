@@ -2,3 +2,11 @@ __pycache__/
 credentials.py
 *.ipynb
 dev/
+.venv
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+.DS_Store
+.env

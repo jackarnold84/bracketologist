@@ -1,0 +1,7 @@
+beautifulsoup4>=4.13.3
+boto3>=1.35.71
+numpy>=2.2.4
+python_dateutil>=2.9.0
+selenium>=4.29.0
+simplejson>=3.20.1
+tqdm>=4.67.1
