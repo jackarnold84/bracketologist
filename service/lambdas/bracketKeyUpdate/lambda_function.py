@@ -1,15 +1,22 @@
 import datetime
 import json
+import os
+import time
 import urllib.request
 
-from config import game_date_to_wins
+import boto3
+from config import autoUpdateGroups, game_date_to_wins
 from dateutil import tz
-from db import GroupDB
+from db import DB_WRITE, GroupDB
 from utils import response
 
 group_db = GroupDB()
+lambda_client = boto3.client('lambda')
 
 KEY_ID = 'key-mens'
+PROCESSOR_FUNCTION = os.environ.get(
+    'PROCESSOR_FUNCTION', 'BracketologistProcessor',
+)
 
 
 def lambda_handler(event, context):
@@ -73,13 +80,30 @@ def lambda_handler(event, context):
         reverse=True,
     )
 
-    # update db
+    # update db and reprocess groups
     if update_entry:
         group_db.insert_key({
             'group_id': KEY_ID,
             'key': key,
             'eliminated': eliminated,
         })
+        time.sleep(1)
+
+        for group_id in autoUpdateGroups:
+            if DB_WRITE != 'prod':
+                print(f'--> skip reprocess in non-prod env')
+
+            print(f'--> reprocess group {group_id}')
+            resp = lambda_client.invoke(
+                FunctionName=PROCESSOR_FUNCTION,
+                InvocationType='Event',
+                Payload=json.dumps({
+                    'groupId': group_id,
+                    'iter': 2000,  # TODO: small for testing
+                }),
+            )
+            if resp.get('StatusCode') >= 300:
+                print(f'--> failed to trigger reprocess for group: {group_id}')
 
     return response({
         'status': 'SUCCESS',

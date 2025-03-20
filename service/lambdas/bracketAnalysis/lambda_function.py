@@ -13,12 +13,8 @@ bracket_db = BracketDB()
 def lambda_handler(event, context):
     print('--> received event: %s' % json.dumps(event))
 
-    # read payload
-    body = json.loads(event['body']) if 'body' in event else {}
-    group_id = body.get('groupId', '')
-    iter_override = int(body.get('iter', 0))
-
-    # TODO: add auth
+    group_id = event.get('groupId', '')
+    iter_override = int(event.get('iter', 0))
 
     if not group_id:
         return response({'error': 'missing groupId in request'}, status=400)

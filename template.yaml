@@ -33,12 +33,6 @@ Resources:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
               Resource: !GetAtt BracketologistGroups.Arn
-      Events:
-        CatchAll:
-          Type: Api
-          Properties:
-            Path: /bracketologist/update
-            Method: POST
 
   BracketologistApi:
     Type: AWS::Serverless::Function
@@ -77,12 +71,13 @@ Resources:
       CodeUri: service/lambdas/bracketKeyUpdate
       Handler: lambda_function.lambda_handler
       MemorySize: 256
-      Timeout: 5
+      Timeout: 10
       Environment:
         Variables:
           DB_READ: prod
           DB_WRITE: prod
           GROUP_TABLE: !Ref BracketologistGroups
+          PROCESSOR_FUNCTION: !Ref BracketologistProcessor
       Policies:
         - Statement:
             - Effect: Allow
@@ -90,6 +85,11 @@ Resources:
                 - dynamodb:GetItem
                 - dynamodb:PutItem
               Resource: !GetAtt BracketologistGroups.Arn
+        - Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: !GetAtt BracketologistProcessor.Arn
       Events:
         BracketologistKeySchedule:
           Type: Schedule
@@ -135,6 +135,6 @@ Outputs:
   BracketologistBracketsTable:
     Description: "Bracketologist Brackets Table"
     Value: !Ref BracketologistBrackets
-  ApiGatewayInvokeURL:
+  BracketologistApiUrl:
     Description: "Invoke URL for the API Gateway"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/bracketologist/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/bracketologist/data/{groupId}"

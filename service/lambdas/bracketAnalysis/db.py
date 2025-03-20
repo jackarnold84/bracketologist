@@ -23,7 +23,8 @@ class GroupDB:
 
     def read_group(self, group_id):
         data = self.table.get_item(
-            Key={'group_id': str(group_id)}
+            Key={'group_id': str(group_id)},
+            ConsistentRead=True,
         )
         return data['Item'] if 'Item' in data else None
 

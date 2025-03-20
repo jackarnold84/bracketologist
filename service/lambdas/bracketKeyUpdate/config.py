@@ -24,3 +24,9 @@ game_date_to_wins = {
     # ncg
     datetime.date(2024, 4, 8): 5,
 }
+
+autoUpdateGroups = [
+    '38fa0dce-43f6-300d-9551-bb8dae6f38e7',
+    'f578de20-bb85-45e8-acd4-b6777b858547',
+    'c23134c4-71c9-491f-9583-011c2cfecd44',
+]
