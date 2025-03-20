@@ -1,8 +1,13 @@
 # class interfaces for dynamodb tables
 
-import boto3
 import json
+import os
 from decimal import Decimal
+
+import boto3
+
+GROUP_TABLE_NAME = os.environ.get('GROUP_TABLE', 'BracketologistGroups')
+DB_WRITE = os.environ.get('DB_WRITE', 'mock')
 
 
 def format_item(item):
@@ -12,7 +17,7 @@ def format_item(item):
 class GroupDB:
     def __init__(self):
         dynamodb_resource = boto3.resource('dynamodb')
-        self.table = dynamodb_resource.Table('bracketologistGroups')
+        self.table = dynamodb_resource.Table(GROUP_TABLE_NAME)
 
     def read_group(self, group_id):
         data = self.table.get_item(
@@ -21,35 +26,9 @@ class GroupDB:
         return data['Item'] if 'Item' in data else None
 
     def insert_group(self, group):
+        if DB_WRITE != 'prod':
+            print(f"Mock write: {group}")
+            return
         self.table.put_item(
             Item=format_item(group)
-        )
-
-
-class BracketDB:
-    def __init__(self):
-        dynamodb_resource = boto3.resource('dynamodb')
-        self.table = dynamodb_resource.Table('bracketologistBrackets')
-
-    def read_bracket(self, id):
-        data = self.table.get_item(
-            Key={'id': str(id)}
-        )
-        if 'Item' not in data:
-            return None
-        bracket = data['Item']
-        bracket['selections'] = {
-            int(k): v for k, v in bracket['selections'].items()
-        }
-        bracket['selections'] = {
-            k: v for k, v in sorted(bracket['selections'].items())
-        }
-        return data['Item']
-
-    def insert_bracket(self, bracket):
-        bracket['selections'] = {
-            str(k): v for k, v in bracket['selections'].items()
-        }
-        self.table.put_item(
-            Item=format_item(bracket)
         )

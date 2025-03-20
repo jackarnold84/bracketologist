@@ -1,9 +1,14 @@
 # class interfaces for dynamodb tables
 
+import os
 from decimal import Decimal
 
 import boto3
 import simplejson as json
+
+GROUP_TABLE_NAME = os.environ.get('GROUP_TABLE', 'BracketologistGroups')
+BRACKET_TABLE_NAME = os.environ.get('BRACKET_TABLE', 'BracketologistBrackets')
+DB_WRITE = os.environ.get('DB_WRITE', 'mock')
 
 
 def format_item(item):
@@ -14,7 +19,7 @@ def format_item(item):
 class GroupDB:
     def __init__(self):
         dynamodb_resource = boto3.resource('dynamodb')
-        self.table = dynamodb_resource.Table('bracketologistGroups')
+        self.table = dynamodb_resource.Table(GROUP_TABLE_NAME)
 
     def read_group(self, group_id):
         data = self.table.get_item(
@@ -23,6 +28,9 @@ class GroupDB:
         return data['Item'] if 'Item' in data else None
 
     def insert_group(self, group):
+        if DB_WRITE != 'prod':
+            print(f"Mock write: {group}")
+            return
         self.table.put_item(
             Item=format_item(group)
         )
@@ -31,7 +39,7 @@ class GroupDB:
 class BracketDB:
     def __init__(self):
         dynamodb_resource = boto3.resource('dynamodb')
-        self.table = dynamodb_resource.Table('bracketologistBrackets')
+        self.table = dynamodb_resource.Table(BRACKET_TABLE_NAME)
 
     def read_bracket(self, id):
         data = self.table.get_item(

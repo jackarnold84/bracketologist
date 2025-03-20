@@ -13,8 +13,7 @@ KEY_ID = 'key-mens'
 
 
 def lambda_handler(event, context):
-    # read query
-    gender = event.get('gender', 'mens')
+    print("--> received event: %s" % json.dumps(event))
 
     # get current key
     current_item = group_db.read_key(KEY_ID) or {}
@@ -32,7 +31,8 @@ def lambda_handler(event, context):
     for evt in res['events']:
         status = evt['status']['type']['name']
         dt = datetime.datetime.fromisoformat(evt['date'])
-        dt_central = dt.replace(tzinfo=tz.gettz('UTC')).astimezone(tz=tz.gettz('America/Chicago'))
+        dt_central = dt.replace(tzinfo=tz.gettz('UTC')).astimezone(
+            tz=tz.gettz('America/Chicago'))
         date = dt_central.date()
         if date not in game_date_to_wins:
             continue

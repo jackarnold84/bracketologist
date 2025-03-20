@@ -1,0 +1,10 @@
+{
+    "path": "/bracketologist/data/38fa0dce-43f6-300d-9551-bb8dae6f38e7",
+    "httpMethod": "GET",
+    "headers": {
+        "Content-Type": "application/json"
+    },
+    "pathParameters": {
+        "groupId": "38fa0dce-43f6-300d-9551-bb8dae6f38e7"
+    }
+}

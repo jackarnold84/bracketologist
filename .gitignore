@@ -10,3 +10,5 @@ dev/
 *.swo
 .DS_Store
 .env
+.aws-sam/
+samconfig.toml

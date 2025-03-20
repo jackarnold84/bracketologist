@@ -1,7 +1,11 @@
 # class interfaces for dynamodb tables
 
 import json
+import os
 from decimal import Decimal
+
+GROUP_TABLE_NAME = os.environ.get('GROUP_TABLE', 'BracketologistGroups')
+BRACKET_TABLE_NAME = os.environ.get('BRACKET_TABLE', 'BracketologistBrackets')
 
 
 def format_item(item):
@@ -10,7 +14,7 @@ def format_item(item):
 
 class GroupDB:
     def __init__(self, dynamodb_resource):
-        self.table = dynamodb_resource.Table('bracketologistGroups')
+        self.table = dynamodb_resource.Table(GROUP_TABLE_NAME)
 
     def insert_group(self, group):
         self.table.put_item(
@@ -20,7 +24,7 @@ class GroupDB:
 
 class BracketDB:
     def __init__(self, dynamodb_resource):
-        self.table = dynamodb_resource.Table('bracketologistBrackets')
+        self.table = dynamodb_resource.Table(BRACKET_TABLE_NAME)
 
     def insert_bracket(self, bracket):
         self.table.put_item(
