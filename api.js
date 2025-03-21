@@ -1,19 +1,15 @@
 // fetch data from APIs
 
 const fetchAnalysisAPI = async (groupID) => {
-    const apiUrl = 'https://71c9c860jj.execute-api.us-east-2.amazonaws.com/default/bracketFetch';
+    const apiUrl = `https://dz1ghyo6k7.execute-api.us-east-2.amazonaws.com/Prod/bracketologist/data/${groupID}`;
 
-    return fetch(apiUrl + '?' + new URLSearchParams(
+    return fetch(apiUrl,
         {
-            'groupID': groupID,
-        }
-    ),
-        {
-            'method': 'POST',
+            'method': 'GET',
         }
     )
         .then(response => response.json())
-        .catch(error => console.warn(error))
+        .catch(error => console.error(error))
 };
 
 

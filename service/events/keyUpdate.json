@@ -1,0 +1,7 @@
+{
+    "detail-type": "Scheduled Event",
+    "source": "aws.events",
+    "detail": {
+        "message": "test key update"
+    }
+}
