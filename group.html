@@ -262,7 +262,6 @@
         <tr>
           ${r.map(t => {
         const adv = advancedToRound(t, teamInfo, round);
-        console.log(round)
         const cls = adv ? 'correct' : teamInfo[t].eliminated ? 'incorrect' : '';
         return (`<td class="${cls}">${teamInfo[t].display_name}</td>`);
       }).join('')}

@@ -99,7 +99,6 @@ def lambda_handler(event, context):
                 InvocationType='Event',
                 Payload=json.dumps({
                     'groupId': group_id,
-                    'iter': 2000,  # TODO: small for testing
                 }),
             )
             if resp.get('StatusCode') >= 300:

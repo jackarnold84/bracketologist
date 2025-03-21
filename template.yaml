@@ -95,7 +95,6 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(10 minutes)
-            Enabled: false
 
   BracketologistGroups:
     Type: AWS::Serverless::SimpleTable
