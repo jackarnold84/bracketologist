@@ -76,10 +76,10 @@ mens_bracket = [
 ]
 
 mens_team_metadata = {
-    'AUB': {'abbrev': 'AUB', 'name': 'Auburn', 'seed': 1, 'stat_seed': 1.25, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/2.png'},
-    'FLA': {'abbrev': 'FLA', 'name': 'Florida', 'seed': 1, 'stat_seed': 0.5, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/57.png'},
-    'DUKE': {'abbrev': 'DUKE', 'name': 'Duke', 'seed': 1, 'stat_seed': 0.0, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/150.png'},
-    'HOU': {'abbrev': 'HOU', 'name': 'Houston', 'seed': 1, 'stat_seed': 1.0, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/248.png'},
+    'AUB': {'abbrev': 'AUB', 'name': 'Auburn', 'seed': 1, 'stat_seed': 0.5, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/2.png'},
+    'FLA': {'abbrev': 'FLA', 'name': 'Florida', 'seed': 1, 'stat_seed': -0.25, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/57.png'},
+    'DUKE': {'abbrev': 'DUKE', 'name': 'Duke', 'seed': 1, 'stat_seed': -1.25, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/150.png'},
+    'HOU': {'abbrev': 'HOU', 'name': 'Houston', 'seed': 1, 'stat_seed': 0.75, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/248.png'},
     'MSU': {'abbrev': 'MSU', 'name': 'Michigan St', 'seed': 2, 'stat_seed': 2.25, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/127.png'},
     'ALA': {'abbrev': 'ALA', 'name': 'Alabama', 'seed': 2, 'stat_seed': 1.75, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/333.png'},
     'SJU': {'abbrev': 'SJU', 'name': "St. John's", 'seed': 2, 'stat_seed': 2.75, 'img': 'https://a.espncdn.com/i/teamlogos/ncaa/500/2599.png'},

@@ -23,7 +23,7 @@ groups = {
 
 # username display alias
 username_alias = {
-    'jack_arnold': 'Jack',
+    'jackarnold': 'Jack',
     '4TannerC': 'Tanner',
     'espnfan1944207453': 'Rohan',
     'spatel18': 'Shiv',
