@@ -177,7 +177,19 @@
 <!-- COMPONENTS -->
 <script>
 
-  const LeaderboardRowComponent = (i, id, name, pts, max, ff, teamInfo) => {
+  const BracketNameComponent = (id, name, selections, teamInfo, elim = false) => {
+    const team = selections[id].CHAMP[0];
+    const img = teamInfo[team].img;
+    const elimImgCls = elim ? 'eliminated-img' : '';
+    return (`
+      <td class="bracket-select flex-cell" name="${id}">
+        <img src="${img}" class="bracket-team-icon ${elimImgCls}">
+        ${name}
+      </td>
+    `);
+  }
+
+  const LeaderboardRowComponent = (i, id, name, pts, max, ff, selections, teamInfo) => {
     const TeamIcon = (team, round) => {
       const img = teamInfo[team].img;
       const eliminated = teamInfo[team].eliminated && !advancedToRound(team, teamInfo, round);
@@ -192,7 +204,7 @@
     return (`
       <tr>
         <td>${i}</td>
-        <td class="bracket-select" name="${id}">${name}</td>
+        ${BracketNameComponent(id, name, selections, teamInfo)}
         <td>${pts}</td>
         <td>${max}</td>
         <td>
@@ -205,12 +217,14 @@
     `);
   };
 
-  const ProjectionRowComponent = (i, id, name, exp, max, win, round) => {
+  const ProjectionRowComponent = (i, id, name, exp, max, win, round, selections, teamInfo) => {
     const opacity = (win / 100).toFixed(2);
+    const eliminated = displayPct(win) === '--';
+    const elimCls = eliminated ? 'eliminated' : '';
     return (`
-      <tr class="proj-tr proj-tr-${round}">
+      <tr class="proj-tr proj-tr-${round} ${elimCls}">
         <td>${i}</td>
-        <td class="bracket-select" name="${id}">${name}</td>
+        ${BracketNameComponent(id, name, selections, teamInfo, eliminated)}
         <td>${exp}</td>
         <td>${max}</td>
         <td style="background-color:rgb(83, 185, 255, ${opacity})">
@@ -220,20 +234,20 @@
     `);
   };
 
-  const RankRowComponent = (i, id, name, avg, best, worst) => (`
+  const RankRowComponent = (i, id, name, avg, best, worst, selections, teamInfo) => (`
     <tr>
       <td>${i}</td>
-      <td class="bracket-select" name="${id}">${name}</td>
+      ${BracketNameComponent(id, name, selections, teamInfo)}
       <td>${avg.toFixed(1)}</td>
       <td>${best}</td>
       <td>${worst}</td>
     </tr>
   `);
 
-  const UpsetRowComponent = (id, name, selected, correct) => (`
+  const UpsetRowComponent = (id, name, selected, correct, selections, teamInfo) => (`
     <tr>
       <td></td>
-      <td class="bracket-select" name="${id}">${name}</td>
+      ${BracketNameComponent(id, name, selections, teamInfo)}
       <td>${selected}</td>
       <td>${correct}</td>
     </tr>
@@ -241,13 +255,17 @@
 
   const TeamPopularityRowComponent = (i, team, abbrev, seed, avg, win, teamInfo) => {
     const eliminated = teamInfo[abbrev].eliminated;
-    const cls = eliminated ? 'eliminated' : '';
+    const elimCls = eliminated ? 'eliminated' : '';
+    const elimImgCls = eliminated ? 'eliminated-img' : '';
     return (`
-      <tr class="${cls}">
+      <tr class="${elimCls}">
         <td>${i}</td>
-        <td>
-          <span>${team}</span>
-          <span class="w3-small x3-l4">${seed}</span>
+        <td class="flex-cell">
+          <img src="${teamInfo[abbrev].img}" class="bracket-team-icon ${elimImgCls}">
+          <span>
+            ${team}
+            <span class="w3-small x3-l4">${seed}</span>
+          </span>
         </td>
         <td>${avg.toFixed(1)}</td>
         <td>${displayPct(win)}</td>
@@ -340,7 +358,7 @@
     // leaderboard
     analysis.current_scores.forEach((x, i) => {
       $('#leaderboard-table').append(
-        LeaderboardRowComponent(i + 1, x.id, x.name, x.pts, x.max, x.ff, analysis.team_info)
+        LeaderboardRowComponent(i + 1, x.id, x.name, x.pts, x.max, x.ff, analysis.bracket_selections, analysis.team_info)
       );
     });
     initToggle($('#leaderboard-toggle'), $('#leaderboard-table').children(), 10);
@@ -350,7 +368,7 @@
     rounds.forEach(round => {
       analysis.projection_board[round].forEach((x, i) => {
         $(`#projection-table`).append(
-          ProjectionRowComponent(i + 1, x.id, x.name, x.exp, x.max, x.win, round)
+          ProjectionRowComponent(i + 1, x.id, x.name, x.exp, x.max, x.win, round, analysis.bracket_selections, analysis.team_info)
         );
       });
     });
@@ -365,7 +383,7 @@
     // rankings
     analysis.rankings.forEach((x, i) => {
       $('#rank-table').append(
-        RankRowComponent(i + 1, x.id, x.name, x.avg, x.best, x.worst)
+        RankRowComponent(i + 1, x.id, x.name, x.avg, x.best, x.worst, analysis.bracket_selections, analysis.team_info)
       );
     });
     initToggle($('#rank-toggle'), $('#rank-table').children(), 15);
@@ -373,7 +391,7 @@
     // upsets
     analysis.upsets_chosen.forEach(x => {
       $('#upset-table').append(
-        UpsetRowComponent(x.id, x.name, x.chosen, x.correct)
+        UpsetRowComponent(x.id, x.name, x.chosen, x.correct, analysis.bracket_selections, analysis.team_info)
       );
     });
     initToggle($('#upset-toggle'), $('#upset-table').children(), 15);
@@ -433,8 +451,8 @@
   // bracket modals
   const initBracketModals = (selections, teamInfo) => {
     $('.bracket-select').on('click', (e) => {
-      const name = $(e.target).text();
-      const id = $(e.target).attr('name');
+      const name = $(e.currentTarget).text();
+      const id = $(e.currentTarget).attr('name');
       $('#bracket-modal-content').empty()
       $('#bracket-modal-content').append(
         BracketModalComponent(name, selections[id], teamInfo)

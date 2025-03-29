@@ -101,6 +101,11 @@ i:hover {
   color: #aeaeae;
 }
 
+.bracket-team-icon {
+  height: 16px;
+  margin-right: 6px;
+}
+
 .team-icon {
   height: 16px;
   margin-right: 4px;
@@ -141,7 +146,10 @@ i:hover {
   text-decoration-thickness: 1px;
 }
 
-
+.flex-cell {
+  display: flex !important;
+  align-items: center !important;
+}
 
 .x3-blue-bg {
   background-color: #0072BC;
@@ -239,6 +247,7 @@ i:hover {
   box-shadow: 0 0 0 1px dimgray;
   width: 100%;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .x3-input:focus,
