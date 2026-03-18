@@ -94,6 +94,7 @@ Resources:
         BracketologistKeySchedule:
           Type: Schedule
           Properties:
+            Name: BracketologistKeySchedule
             Schedule: rate(10 minutes)
 
   BracketologistGroups:
