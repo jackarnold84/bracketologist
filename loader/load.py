@@ -69,10 +69,16 @@ def fetch_bracket(bracket_id, year, type, username, bracket_name):
     driver.get(url)
     time.sleep(5)
     soup = BeautifulSoup(driver.page_source, 'lxml')
-    assert len(soup.select('.BracketPropositionHeader-pickName')) == 63
+    picks_on_page = soup.select('.BracketPropositionHeader-pickName')
+    if len(picks_on_page) != 63:
+        print(
+            '--> skipping bracket %s: expected 63 picks, found %s' %
+            (bracket_id, len(picks_on_page))
+        )
+        return None
 
     picks = {}
-    for x in soup.select('.BracketPropositionHeader-pickName'):
+    for x in picks_on_page:
         t = x.text
         if t not in picks:
             picks[t] = 1
@@ -111,7 +117,7 @@ def fetch_group_brackets(group_info, year, type):
         if b:
             brackets[bracket_id] = b
         else:
-            group_info['brackets'].pop(i)
+            print('--> bracket %s was not loaded' % bracket_id)
         time.sleep(4)
     return brackets
 

@@ -3,26 +3,26 @@ import datetime
 # set the date of each round
 game_date_to_wins = {
     # r64
-    datetime.date(2025, 3, 20): 0,
-    datetime.date(2025, 3, 21): 0,
+    datetime.date(2026, 3, 19): 0,
+    datetime.date(2026, 3, 20): 0,
 
     # r32
-    datetime.date(2025, 3, 22): 1,
-    datetime.date(2025, 3, 23): 1,
+    datetime.date(2026, 3, 21): 1,
+    datetime.date(2026, 3, 22): 1,
 
     # s16
-    datetime.date(2025, 3, 27): 2,
-    datetime.date(2025, 3, 28): 2,
+    datetime.date(2026, 3, 26): 2,
+    datetime.date(2026, 3, 27): 2,
 
     # e8
-    datetime.date(2025, 3, 29): 3,
-    datetime.date(2025, 3, 30): 3,
+    datetime.date(2026, 3, 28): 3,
+    datetime.date(2026, 3, 29): 3,
 
     # f4
-    datetime.date(2025, 4, 5): 4,
+    datetime.date(2026, 4, 4): 4,
 
     # ncg
-    datetime.date(2025, 4, 7): 5,
+    datetime.date(2026, 4, 6): 5,
 }
 
 autoUpdateGroups = [
